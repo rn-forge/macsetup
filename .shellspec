@@ -1,0 +1,5 @@
+--default-path tests
+--load-path tests
+--require spec_helper
+--shell zsh
+--format documentation

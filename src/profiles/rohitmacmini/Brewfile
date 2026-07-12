@@ -1,0 +1,55 @@
+## taps
+
+## formulae
+### system tools
+brew "bash"
+brew "gawk"
+brew "git"
+brew "sevenzip"
+brew "jq"
+brew "telnet"
+brew "yq"
+### development tools
+brew "editorconfig"
+brew "gh"
+brew "semver"
+### python tools
+brew "uv"
+### shell tools
+brew "mise"
+brew "shellcheck"
+brew "shellspec"
+brew "shfmt"
+### java tools
+brew "gradle"
+brew "maven"
+### exclusive wireless
+brew "mysql-client@8.0"
+### apollo
+brew "ffmpeg"
+
+## casks
+### system tools
+cask "adobe-acrobat-reader"
+cask "google-chrome"
+cask "logi-options+"
+cask "progressive-downloader"
+cask "teamviewer"
+cask "whatsapp"
+### development tools
+cask "db-browser-for-sqlite"
+cask "drawio"
+cask "github"
+cask "postman"
+cask "visual-studio-code"
+### ai tools
+cask "claude"
+cask "claude-code"
+cask "codex"
+cask "codex-app"
+### media tools
+cask "audacity"
+cask "vlc"
+### exclusive wireless
+cask "gcloud-cli"
+cask "mysqlworkbench"
