@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash",
+      "Edit",
+      "Write",
+      "Bash(mise *)",
+      "Bash(shellspec *)",
+      "Bash(curl -fsSL *)",
+      "Bash(gh *)",
+      "Bash(git *)"
+    ]
+  }
+}
