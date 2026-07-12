@@ -1,0 +1,97 @@
+name: CICD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: # manual trigger
+
+jobs:
+  verify:
+    # macos: the shellspec suite drives the real scripts, which use BSD sed/zsh
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install mise tools (shellcheck, shfmt)
+        uses: jdx/mise-action@v2
+
+      - name: Install ShellSpec
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/shellspec/shellspec/master/install.sh | sh -s -- --yes
+
+      - name: Install gawk
+        run: brew install gawk
+
+      - name: Verify
+        run: mise run verify
+
+      - name: Upload release assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: |
+            dist/macsetup.tar.gz
+            dist/macsetup.tar.gz.sha256
+            dist/install.sh
+          retention-days: 7
+
+  publish:
+    if: |
+      always() &&
+      github.event_name == 'push' &&
+      github.ref_name == 'main' &&
+      needs.verify.result == 'success'
+    needs: [verify]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version
+        id: read_version
+        run: |
+          version="$(cat VERSION)"
+          if ! printf '%s' "$version" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            printf 'error: VERSION is not valid semver: %s\n' "$version" >&2
+            exit 1
+          fi
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Download release assets
+        uses: actions/download-artifact@v4
+        with:
+          name: release-assets
+          path: dist/
+
+      - name: Create and push tag
+        id: tag
+        run: |
+          tag="v${{ steps.read_version.outputs.version }}"
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null; then
+            printf '%s\n' "Tag $tag already exists, skipping release."
+            printf 'tag_pushed=false\n' >> "$GITHUB_OUTPUT"
+          else
+            git tag -a "$tag" -m "Release $tag"
+            git push origin "$tag"
+            printf 'tag_pushed=true\n' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish GitHub Release
+        if: steps.tag.outputs.tag_pushed == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.read_version.outputs.version }}
+          generate_release_notes: true
+          files: |
+            dist/macsetup.tar.gz
+            dist/macsetup.tar.gz.sha256
+            dist/install.sh

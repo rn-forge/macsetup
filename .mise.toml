@@ -1,0 +1,43 @@
+[tools]
+shellcheck = "0.11.0"
+shfmt = "3.13.1"
+
+[tasks.format]
+description = "Format all shell scripts with shfmt"
+run = "shfmt -w -i 2 src/ scripts/"
+
+[tasks.format-check]
+description = "Check shell scripts are formatted — exits non-zero and shows diff if any differ"
+run = "shfmt -d -i 2 src/ scripts/"
+
+[tasks.lint]
+description = "Lint all shell scripts with shellcheck"
+run = "shellcheck $(find src scripts -name '*.sh' | sort)"
+
+[tasks.test]
+description = "Run the ShellSpec suite (shell fixed to zsh via .shellspec)"
+run = "shellspec tests/"
+
+[tasks.build]
+description = "Generate the dist/macsetup tree and dist/macsetup.tar.gz release tarball"
+run = "bash scripts/build.sh"
+
+[tasks.docs]
+description = "Generate markdown docs from shdoc annotations under src/"
+run = """
+mkdir -p docs
+for f in $(find src -name '*.sh' | sort); do
+  rel="${f#src/}"
+  out="docs/${rel%.sh}.md"
+  mkdir -p "$(dirname "$out")"
+  gawk -f scripts/shdoc <"$f" >"$out"
+done
+"""
+
+[tasks.clean]
+description = "Remove generated dist/ artifacts"
+run = "rm -rf dist/"
+
+[tasks.verify]
+description = "Full pipeline: format-check, lint, test, build, docs"
+depends = ["format-check", "lint", "test", "build", "docs"]

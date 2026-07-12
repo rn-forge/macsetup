@@ -1,0 +1,38 @@
+#compdef rnfmac
+# zsh completion for rnfmac — sub-commands are derived from the installed dist's commands/
+# (zsh-only file: excluded from the project's lint task in .mise.toml; the directive below
+# is for IDE lint extensions, which check this file directly regardless of that exclusion.
+# There's no zsh support upstream, so the `(N)` glob qualifier gets misparsed as bash.)
+# shellcheck disable=SC1073,SC1036,SC1058,SC1072
+
+local commands_path="${RNF_HOME:-${HOME}/.rn-forge}/macsetup/current/commands"
+
+if (( CURRENT == 2 )); then
+  local -a subcommands
+  local script name dir
+  for script in "${commands_path}"/*.sh(N); do
+    name="${script:t:r}"
+    subcommands+=("${name//_/-}")
+  done
+  for dir in "${commands_path}"/*(N/); do
+    name="${dir:t}"
+    [[ "${name}" == "lib" ]] && continue
+    subcommands+=("${name//_/-}:group")
+  done
+  _describe 'rnfmac sub-command' subcommands
+  return
+fi
+
+if (( CURRENT == 3 )); then
+  local group="${words[2]//-/_}"
+  local group_path="${commands_path}/${group}"
+  if [[ -d "${group_path}" ]]; then
+    local -a group_subcommands
+    local script name
+    for script in "${group_path}"/*.sh(N); do
+      name="${script:t:r}"
+      group_subcommands+=("${name//_/-}")
+    done
+    _describe 'rnfmac group sub-command' group_subcommands
+  fi
+fi
