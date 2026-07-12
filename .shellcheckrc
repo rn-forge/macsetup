@@ -1,0 +1,4 @@
+# Not following sourced files: this repo sources files via dynamic
+# paths (e.g. "${RNF_HOME}/rn-forge.sh"), which shellcheck can't resolve.
+disable=SC1090
+disable=SC1091
