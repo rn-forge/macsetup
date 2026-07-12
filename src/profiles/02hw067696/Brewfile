@@ -1,0 +1,33 @@
+## taps
+
+## formulae
+### system tools
+brew "bash"
+brew "gawk"
+brew "git"
+brew "sevenzip"
+brew "jq"
+brew "telnet"
+brew "yq"
+### development tools
+brew "editorconfig"
+brew "gh"
+brew "semver"
+### python tools
+brew "uv"
+### shell tools
+brew "mise"
+brew "shellcheck"
+brew "shellspec"
+brew "shfmt"
+### java tools
+brew "gradle"
+brew "maven"
+
+## casks
+### system tools
+cask "microsoft-edge"
+cask "logi-options+"
+### development tools
+cask "postman"
+cask "visual-studio-code"

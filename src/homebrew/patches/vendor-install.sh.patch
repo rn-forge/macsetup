@@ -1,0 +1,50 @@
+diff --git a/Library/Homebrew/cmd/vendor-install.sh b/Library/Homebrew/cmd/vendor-install.sh
+index a4fc1c137c..505362a8b9 100644
+--- a/Library/Homebrew/cmd/vendor-install.sh
++++ b/Library/Homebrew/cmd/vendor-install.sh
+@@ -93,6 +93,32 @@ check_linux_glibc_version() {
+   fi
+ }
+ 
++remote_curl() {
++  local url="${1}"
++  local output_path="${2}"
++
++  local remote_host="${HOMEBREW_REMOTE_RELAY_HOST}"
++  local remote_dir="/tmp/homebrew_REMOTE_RELAY"
++  local remote_location="${remote_dir}/$(basename "${output_path}")"
++
++  local download_command="mkdir -p ${remote_dir} && ${HOMEBREW_CURL} ${curl_args[@]} ${url} -o ${remote_location}"
++  local cleanup_command="rm -f ${remote_location}"
++
++  if [[ "${HOMEBREW_REMOTE_RELAY_DEBUG-0}" == "1" ]]
++  then
++    echo "Warning: using homebrew REMOTE_RELAY => ${remote_host}
++download: ${download_command}
++transfer: scp ${remote_location} ${output_path}
++cleanup: ${cleanup_command}" >&2
++  fi
++
++  ssh "${remote_host}" "${download_command}" && scp "${remote_host}:${remote_location}" "${output_path}"
++  local exit_code="$?"
++
++  ssh "${remote_host}" "${cleanup_command}" 2>&1
++  return "${exit_code}"
++}
++
+ fetch() {
+   local -a curl_args
+   local url
+@@ -149,7 +175,11 @@ fetch() {
+     do
+       [[ -n "${HOMEBREW_QUIET}" || -n "${first_try}" ]] || ohai "Downloading ${url}" >&2
+       first_try=''
+-      if [[ -f "${temporary_path}" ]]
++      if [[ "${HOMEBREW_REMOTE_RELAY_ENABLED-0}" == "1" ]]
++      then
++        remote_curl "${url}" "${temporary_path}"
++        curl_exit_code="$?"
++      elif [[ -f "${temporary_path}" ]]
+       then
+         # HOMEBREW_CURL is set by brew.sh (and isn't misspelt here)
+         # shellcheck disable=SC2153

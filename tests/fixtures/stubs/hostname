@@ -1,0 +1,3 @@
+#!/bin/sh
+# test double: fixed hostname so specs can ship a matching profile dir
+echo "testhost"
