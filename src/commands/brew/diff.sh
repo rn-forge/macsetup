@@ -72,7 +72,21 @@ function checkout_root() {
 # @exitcode 1 Drift detected.
 function report_diff() {
   log_verbose "Checking brew bundle drift against ${BREWFILE} ..."
-  if brew bundle check --file="${BREWFILE}" --verbose; then
+  local missing=0 extra=0
+
+  if ! brew bundle check --file="${BREWFILE}" --verbose; then
+    missing=1
+  fi
+
+  local extras
+  extras="$(brew bundle cleanup --file="${BREWFILE}" 2>/dev/null | sed '/^Would `brew cleanup`:$/,$d')" || true
+  if [ -n "${extras}" ]; then
+    extra=1
+    log_warning "installed but not in Brewfile:"
+    echo "${extras}"
+  fi
+
+  if [ "${missing}" -eq 0 ] && [ "${extra}" -eq 0 ]; then
     log_success "no drift — installed packages match the Brewfile"
     return 0
   fi
@@ -95,7 +109,35 @@ function write_brewfile() {
 
   local target="${root}/src/profiles/${HOST_NAME}/Brewfile"
   log_verbose "Writing installed package state to ${target} ..."
-  brew bundle dump --file="${target}" --force --describe
+  brew bundle dump --file="${target}" --force --no-vscode --no-uv --no-npm
+
+  log_verbose "Dropping dependency-only formulae (keeping only explicitly requested ones) ..."
+  local leaves
+  leaves="$(brew leaves --installed-on-request)"
+  LEAVES="${leaves}" awk '
+    BEGIN {
+      n = split(ENVIRON["LEAVES"], arr, "\n"); for (i = 1; i <= n; i++) requested[arr[i]] = 1
+      header["tap"] = "## taps"; header["brew"] = "## formulae"; header["cask"] = "## casks"
+    }
+    /^#/ { pending = $0; next }
+    /^brew "/ {
+      name = $0
+      sub(/^brew "/, "", name)
+      sub(/".*/, "", name)
+      if (!(name in requested)) { pending = ""; next }
+    }
+    {
+      if ($1 != last_type) {
+        if (last_type != "") print ""
+        if ($1 in header) print header[$1]
+        last_type = $1
+      }
+      if (pending != "") print pending
+      pending = ""
+      print
+    }
+  ' "${target}" >"${target}.tmp" && mv "${target}.tmp" "${target}"
+
   log_success "Brewfile updated at ${target}"
 }
 
