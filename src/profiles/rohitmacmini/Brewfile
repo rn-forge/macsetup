@@ -1,55 +1,83 @@
-## taps
-
 ## formulae
-### system tools
+# Bourne-Again SHell, a UNIX command interpreter
 brew "bash"
-brew "gawk"
-brew "git"
-brew "sevenzip"
-brew "jq"
-brew "telnet"
-brew "yq"
-### development tools
+# Maintain consistent coding style between multiple editors
 brew "editorconfig"
-brew "gh"
-brew "semver"
-### python tools
-brew "uv"
-### shell tools
-brew "mise"
-brew "shellcheck"
-brew "shellspec"
-brew "shfmt"
-### java tools
-brew "gradle"
-brew "maven"
-### exclusive wireless
-brew "mysql-client@8.0"
-### apollo
+# Play, record, convert, and stream select audio and video codecs
 brew "ffmpeg"
+# GNU awk utility
+brew "gawk"
+# GitHub command-line tool
+brew "gh"
+# Distributed revision control system
+brew "git"
+# Open-source build automation tool based on the Groovy and Kotlin DSL
+brew "gradle"
+# Lightweight and flexible command-line JSON processor
+brew "jq"
+# Java-based project management
+brew "maven"
+# Polyglot runtime manager (asdf rust clone)
+brew "mise"
+# Open source relational database management system
+brew "mysql-client@8.0"
+# Semantic version parser for node (the one npm uses)
+brew "semver"
+# 7-Zip is a file archiver with a high compression ratio
+brew "sevenzip"
+# Static analysis and lint tool, for (ba)sh scripts
+brew "shellcheck"
+# BDD unit testing framework for dash, bash, ksh, zsh and all POSIX shells
+brew "shellspec"
+# Autoformat shell script source code
+brew "shfmt"
+# User interface to the TELNET protocol
+brew "telnet"
+# Extremely fast Python package installer and resolver, written in Rust
+brew "uv"
+# Process YAML, JSON, XML, CSV and properties documents from the CLI
+brew "yq"
+# Blazingly fast Zsh syntax highlighter
+brew "zsh-patina"
 
 ## casks
-### system tools
+# View, print, and comment on PDF documents
 cask "adobe-acrobat-reader"
-cask "google-chrome"
-cask "logi-options+"
-cask "progressive-downloader"
-cask "teamviewer"
-cask "whatsapp"
-### development tools
-cask "db-browser-for-sqlite"
-cask "drawio"
-cask "github"
-cask "postman"
-cask "visual-studio-code"
-### ai tools
-cask "claude"
-cask "claude-code"
-cask "codex"
-cask "codex-app"
-### media tools
+# Multi-track audio editor and recorder
 cask "audacity"
-cask "vlc"
-### exclusive wireless
+# Anthropic's official Claude AI desktop app
+cask "claude"
+# Terminal-based AI coding assistant
+cask "claude-code"
+# OpenAI's coding agent that runs in your terminal
+cask "codex"
+# OpenAI's Codex desktop app for managing coding agents
+cask "codex-app"
+# Browser for SQLite databases
+cask "db-browser-for-sqlite"
+# Online diagram software
+cask "drawio"
+# Set of tools to manage resources and applications hosted on Google Cloud
 cask "gcloud-cli"
+# Desktop client for GitHub repositories
+cask "github"
+# Web browser
+cask "google-chrome"
+# Software for Logitech devices
+cask "logi-options+"
+# Provides updates to various Microsoft products
+cask "microsoft-auto-update"
+# Visual tool to design, develop and administer MySQL servers
 cask "mysqlworkbench"
+# Collaboration platform for API development
+cask "postman"
+# Download manager
+cask "progressive-downloader"
+# Remote access and connectivity software focused on security
+cask "teamviewer"
+# Open-source code editor
+cask "visual-studio-code"
+# Multimedia player
+cask "vlc"
+# Native desktop client for WhatsApp
+cask "whatsapp"

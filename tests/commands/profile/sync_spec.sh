@@ -92,6 +92,7 @@ AfterEach 'cleanup_sandbox'
 It 'render_profile writes shared content before host overrides'
 mkdir -p "${SANDBOX}/product/current/profiles/shared" "${SANDBOX}/product/current/profiles/testhost"
 echo 'echo shared-part' >"${SANDBOX}/product/current/profiles/shared/profile.zsh"
+echo '# aliases' >"${SANDBOX}/product/current/profiles/shared/aliases.zsh"
 echo 'echo host-part' >"${SANDBOX}/product/current/profiles/testhost/profile.zsh"
 echo '# brewfile' >"${SANDBOX}/product/current/profiles/testhost/Brewfile"
 write_unit_driver \

@@ -2,7 +2,7 @@ diff --git a/Library/Homebrew/cmd/vendor-install.sh b/Library/Homebrew/cmd/vendo
 index a4fc1c137c..505362a8b9 100644
 --- a/Library/Homebrew/cmd/vendor-install.sh
 +++ b/Library/Homebrew/cmd/vendor-install.sh
-@@ -93,6 +93,32 @@ check_linux_glibc_version() {
+@@ -93,6 +93,39 @@ check_linux_glibc_version() {
    fi
  }
  
@@ -14,7 +14,14 @@ index a4fc1c137c..505362a8b9 100644
 +  local remote_dir="/tmp/homebrew_REMOTE_RELAY"
 +  local remote_location="${remote_dir}/$(basename "${output_path}")"
 +
-+  local download_command="mkdir -p ${remote_dir} && ${HOMEBREW_CURL} ${curl_args[@]} ${url} -o ${remote_location}"
++  local -a remote_curl_args
++  local arg
++  for arg in "${HOMEBREW_CURL}" "${curl_args[@]}" "${url}" -o "${remote_location}"
++  do
++    remote_curl_args+=("$(printf '%q' "${arg}")")
++  done
++
++  local download_command="mkdir -p ${remote_dir} && ${remote_curl_args[*]}"
 +  local cleanup_command="rm -f ${remote_location}"
 +
 +  if [[ "${HOMEBREW_REMOTE_RELAY_DEBUG-0}" == "1" ]]
