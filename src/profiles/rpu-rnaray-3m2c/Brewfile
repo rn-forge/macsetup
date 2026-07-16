@@ -1,34 +1,51 @@
-## taps
-
 ## formulae
-### system tools
+# Bourne-Again SHell, a UNIX command interpreter
 brew "bash"
-brew "gawk"
-brew "git"
-brew "sevenzip"
-brew "jq"
-brew "telnet"
-brew "yq"
-### development tools
+# Maintain consistent coding style between multiple editors
 brew "editorconfig"
+# GNU awk utility
+brew "gawk"
+# GitHub command-line tool
 brew "gh"
-brew "semver"
-### python tools
-brew "uv"
-### shell tools
-brew "mise"
-brew "shellcheck"
-brew "shellspec"
-brew "shfmt"
-### java tools
+# Distributed revision control system
+brew "git"
+# Open-source build automation tool based on the Groovy and Kotlin DSL
 brew "gradle"
+# Lightweight and flexible command-line JSON processor
+brew "jq"
+# Java-based project management
 brew "maven"
+# Polyglot runtime manager (asdf rust clone)
+brew "mise"
+# Manage multiple Node.js versions
+brew "nvm"
+# Semantic version parser for node (the one npm uses)
+brew "semver"
+# 7-Zip is a file archiver with a high compression ratio
+brew "sevenzip"
+# Static analysis and lint tool, for (ba)sh scripts
+brew "shellcheck"
+# BDD unit testing framework for dash, bash, ksh, zsh and all POSIX shells
+brew "shellspec"
+# Autoformat shell script source code
+brew "shfmt"
+# User interface to the TELNET protocol
+brew "telnet"
+# Extremely fast Python package installer and resolver, written in Rust
+brew "uv"
+# Process YAML, JSON, XML, CSV and properties documents from the CLI
+brew "yq"
 
 ## casks
-### system tools
+# View, print, and comment on PDF documents
 cask "adobe-acrobat-reader"
+# Web browser
 cask "google-chrome"
+# Software for Logitech devices
 cask "logi-options+"
-### development tools
+# Provides updates to various Microsoft products
+cask "microsoft-auto-update"
+# Collaboration platform for API development
 cask "postman"
+# Open-source code editor
 cask "visual-studio-code"
