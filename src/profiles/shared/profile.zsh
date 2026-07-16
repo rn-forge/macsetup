@@ -54,22 +54,3 @@ if [ -d "${HOME}/.sdkman" ]; then
 fi
 
 #printf "========== rn-forge: PATH ==========\n\033[1;33m%s\033[0m\n" "${PATH}"
-
-#################### aliases
-#### brew aliases
-alias brl="brew list"
-alias bru="brew upgrade"
-alias bri="brew install"
-alias brs="brew search"
-alias brc="brew cleanup"
-alias brf="brew info"
-alias bra="brew info --cask --json=v2 \$(brew ls --cask) | jq -r '.casks[]|select(.auto_updates==true)|.token'"
-
-#### rnf aliases
-rnfdev() {
-  if [ -z "$1" ]; then
-    cd "${HOME}/devel/workspaces/rn-forge" || return
-  else
-    cd "${HOME}/devel/workspaces/rn-forge/$1" || return
-  fi
-}

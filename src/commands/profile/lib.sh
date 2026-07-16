@@ -28,6 +28,9 @@ function render_profile_content() {
   echo "#################### macsetup profile — rendered by profile/sync.sh, DO NOT EDIT"
   cat "${shared_profile}"
   echo ""
+  echo "#################### aliases"
+  cat "${PRODUCT_HOME}/current/profiles/shared/aliases.zsh"
+  echo ""
   echo "#################### host overrides: ${HOST_NAME}"
   cat "${host_profile}"
 }
