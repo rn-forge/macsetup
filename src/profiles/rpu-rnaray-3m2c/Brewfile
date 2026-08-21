@@ -39,12 +39,16 @@ brew "yq"
 ## casks
 # View, print, and comment on PDF documents
 cask "adobe-acrobat-reader"
+# App to build and share containerised applications and microservices
+cask "docker-desktop"
 # Web browser
 cask "google-chrome"
 # Software for Logitech devices
 cask "logi-options+"
 # Provides updates to various Microsoft products
 cask "microsoft-auto-update"
++# Virtual machine client
++cask "omnissa-horizon-client"
 # Collaboration platform for API development
 cask "postman"
 # Open-source code editor

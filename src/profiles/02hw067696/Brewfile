@@ -37,6 +37,8 @@ brew "yq"
 ## casks
 # Software for Logitech devices
 cask "logi-options+"
+# Visual diff and merge tool
+cask "meld"
 # Provides updates to various Microsoft products
 cask "microsoft-auto-update"
 # Multi-platform web browser

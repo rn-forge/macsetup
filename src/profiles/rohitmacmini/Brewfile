@@ -11,6 +11,10 @@ brew "gawk"
 brew "gh"
 # Distributed revision control system
 brew "git"
+# Audit git repos for secrets
+brew "gitleaks"
+# Task is a task runner/build tool that aims to be simpler and easier to use
+brew "go-task"
 # Open-source build automation tool based on the Groovy and Kotlin DSL
 brew "gradle"
 # Lightweight and flexible command-line JSON processor
@@ -21,6 +25,8 @@ brew "maven"
 brew "mise"
 # Open source relational database management system
 brew "mysql-client@8.0"
+# PDF rendering library (based on the xpdf-3.0 code base)
+brew "poppler"
 # Semantic version parser for node (the one npm uses)
 brew "semver"
 # 7-Zip is a file archiver with a high compression ratio
@@ -35,6 +41,8 @@ brew "shfmt"
 brew "telnet"
 # Extremely fast Python package installer and resolver, written in Rust
 brew "uv"
+# Convert HTML to PDF
+brew "weasyprint"
 # Process YAML, JSON, XML, CSV and properties documents from the CLI
 brew "yq"
 # Blazingly fast Zsh syntax highlighter
@@ -45,18 +53,20 @@ brew "zsh-patina"
 cask "adobe-acrobat-reader"
 # Multi-track audio editor and recorder
 cask "audacity"
+# OpenAI's official ChatGPT desktop app
+cask "chatgpt"
 # Anthropic's official Claude AI desktop app
 cask "claude"
 # Terminal-based AI coding assistant
 cask "claude-code"
-# OpenAI's coding agent that runs in your terminal
-cask "codex"
-# OpenAI's Codex desktop app for managing coding agents
-cask "codex-app"
 # Browser for SQLite databases
 cask "db-browser-for-sqlite"
+# App to build and share containerised applications and microservices
+cask "docker-desktop"
 # Online diagram software
 cask "drawio"
+# Collaborative team software
+cask "figma"
 # Set of tools to manage resources and applications hosted on Google Cloud
 cask "gcloud-cli"
 # Desktop client for GitHub repositories
@@ -69,6 +79,10 @@ cask "logi-options+"
 cask "microsoft-auto-update"
 # Visual tool to design, develop and administer MySQL servers
 cask "mysqlworkbench"
+# AI-powered answer engine with Personal Computer agent
+cask "perplexity"
+# Administration and development platform for PostgreSQL
+cask "pgadmin4"
 # Collaboration platform for API development
 cask "postman"
 # Download manager

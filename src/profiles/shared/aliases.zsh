@@ -18,5 +18,8 @@ alias brf="brew info"
 alias bra="brew info --cask --json=v2 \$(brew ls --cask) | jq -r '.casks[]|select(.auto_updates==true)|.token'"
 
 ## claude aliases
-alias claude-config="claude config set hasTrustDialogAccepted true"
-alias claude-remote="claude --remote-control"
+alias claude-trust='jq ".projects[\"$(pwd)\"].hasTrustDialogAccepted = true" ${HOME}/.claude.json > ${HOME}/.claude.json.tmp && mv ${HOME}/.claude.json.tmp ${HOME}/.claude.json'
+alias claude-remote='claude remote-control --name "$(basename "$(pwd)")" --remote-control-session-name-prefix "$(basename "$(pwd)")-" --permission-mode auto --spawn same-dir '
+
+## claude aliases
+alias codex-trust='KEY="$(pwd)" VALUE="trusted" yq -i -p toml -o toml ".projects[strenv(KEY)].trust_level = strenv(VALUE)" ${HOME}/.codex/config.toml'
