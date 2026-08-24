@@ -9,6 +9,7 @@ AfterEach 'cleanup_sandbox'
 setup_cleanup() {
   setup_sandbox
   run_sync_from_checkout >/dev/null 2>&1 # installs CHECKOUT_VERSION as current
+  return 0
 }
 
 It 'removes old version dirs but keeps current'

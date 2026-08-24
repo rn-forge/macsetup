@@ -6,11 +6,14 @@ Describe 'profile/sync.sh (integration)'
 BeforeEach 'setup_sandbox'
 AfterEach 'cleanup_sandbox'
 
+MACSETUP_RC_MARKER='#################### macsetup'
+PROFILE_SYNCED_MSG='Profile synced successfully'
+
 It 'runs against an already-installed dist (installed by install.sh, not by profile sync itself)'
 install_dist_from_checkout
 When run script "${CHECKOUT}/src/commands/profile/sync.sh"
 The status should be success
-The output should include 'Profile synced successfully'
+The output should include "${PROFILE_SYNCED_MSG}"
 The path "${HOME}/.rn-forge/macsetup/v${CHECKOUT_VERSION}" should be directory
 The path "${HOME}/.rn-forge/macsetup/current" should be symlink
 The path "${HOME}/.rn-forge/bin/rnfmac" should be symlink
@@ -22,7 +25,7 @@ It 'renders shared + host profile and copies the Brewfile'
 install_dist_from_checkout
 When run script "${CHECKOUT}/src/commands/profile/sync.sh"
 The status should be success
-The output should include 'Profile synced successfully'
+The output should include "${PROFILE_SYNCED_MSG}"
 The contents of file "${HOME}/.rn-forge/macsetup/profile.zsh" should include 'RNFMAC_PROFILE_LOADED'
 The contents of file "${HOME}/.rn-forge/macsetup/profile.zsh" should include 'host overrides: testhost'
 The contents of file "${HOME}/.rn-forge/macsetup/profile.zsh" should include 'RNF_TEST_HOST_MARKER'
@@ -33,8 +36,8 @@ It 'patches .zprofile and .zshrc with the profile source line'
 install_dist_from_checkout
 When run script "${CHECKOUT}/src/commands/profile/sync.sh"
 The status should be success
-The output should include 'Profile synced successfully'
-The contents of file "${HOME}/.zprofile" should include '#################### macsetup'
+The output should include "${PROFILE_SYNCED_MSG}"
+The contents of file "${HOME}/.zprofile" should include "${MACSETUP_RC_MARKER}"
 The contents of file "${HOME}/.zprofile" should include "source ${HOME}/.rn-forge/macsetup/profile.zsh"
 The contents of file "${HOME}/.zshrc" should include "source ${HOME}/.rn-forge/macsetup/profile.zsh"
 End
@@ -43,8 +46,9 @@ It 'is idempotent — a second run does not duplicate the rc blocks'
 sync_twice_and_count() {
   run_profile_sync_from_checkout >/dev/null 2>&1
   run_profile_sync_from_checkout >/dev/null 2>&1
-  echo "zprofile-markers:$(grep -c '#################### macsetup' "${HOME}/.zprofile")"
-  echo "zshrc-markers:$(grep -c '#################### macsetup' "${HOME}/.zshrc")"
+  echo "zprofile-markers:$(grep -c "${MACSETUP_RC_MARKER}" "${HOME}/.zprofile")"
+  echo "zshrc-markers:$(grep -c "${MACSETUP_RC_MARKER}" "${HOME}/.zshrc")"
+  return 0
 }
 When call sync_twice_and_count
 The status should be success
@@ -57,9 +61,10 @@ seed_and_sync() {
   local stale_line="export SOME_OLD_MACSETUP_VAR=1"
   printf '#################### macsetup\n%s\n' "${stale_line}" >>"${HOME}/.zprofile"
   run_profile_sync_from_checkout >/dev/null 2>&1
-  echo "markers:$(grep -c '#################### macsetup' "${HOME}/.zprofile")"
+  echo "markers:$(grep -c "${MACSETUP_RC_MARKER}" "${HOME}/.zprofile")"
   echo "stale-lines:$(grep -cF "${stale_line}" "${HOME}/.zprofile")"
   grep -qF "source ${HOME}/.rn-forge/macsetup/profile.zsh" "${HOME}/.zprofile" && echo "profile-line:present"
+  return 0
 }
 When call seed_and_sync
 The status should be success
@@ -80,7 +85,7 @@ It 'runs from the installed dist without re-copying (current stays on its versio
 run_profile_sync_from_checkout >/dev/null 2>&1
 When run script "${HOME}/.rn-forge/bin/rnfmac" profile sync
 The status should be success
-The output should include 'Profile synced successfully'
+The output should include "${PROFILE_SYNCED_MSG}"
 The contents of file "${HOME}/.rn-forge/macsetup/current/VERSION" should include "${CHECKOUT_VERSION}"
 End
 End

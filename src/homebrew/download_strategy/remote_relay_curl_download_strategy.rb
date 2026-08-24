@@ -10,6 +10,7 @@ class RemoteRelayCurlDownloadStrategy < CurlDownloadStrategy
 
   sig { override.params(url: String, timeout: T.nilable(T.any(Float, Integer))).returns(URLMetadata) }
   def resolve_url_basename_time_file_size(url, timeout: nil)
+    _ = timeout # required by the overridden interface; unused here
     [url, parse_basename(url), nil, nil, nil, false]
   end
 
@@ -18,6 +19,7 @@ class RemoteRelayCurlDownloadStrategy < CurlDownloadStrategy
             .returns(T.nilable(SystemCommand::Result))
   }
   def _fetch(url:, resolved_url:, timeout:)
+    _ = url # required by the overridden interface; unused here
     remote_host = ENV.fetch("HOMEBREW_REMOTE_RELAY_HOST")
     remote_dir = "/tmp/homebrew_REMOTE_RELAY"
     remote_location = "#{remote_dir}/#{temporary_path.basename}"

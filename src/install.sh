@@ -41,7 +41,7 @@ SELF_PATH="$(readlink -f "$0" 2>/dev/null || echo "$0")"
 ## RNF_SHKIT_INSTALL_BUNDLE lets a blocked network (e.g. behind a corporate proxy)
 ## point at a shkit release tarball fetched out-of-band instead of curling it —
 ## shkit's own install.sh would otherwise try (and fail) to curl the same tarball.
-if [ -n "${RNF_SHKIT_INSTALL_BUNDLE:-}" ]; then
+if [[ -n "${RNF_SHKIT_INSTALL_BUNDLE:-}" ]]; then
   _rnf_shkit_bundle_dir="$(mktemp -d)"
   if tar -xzf "${RNF_SHKIT_INSTALL_BUNDLE}" -C "${_rnf_shkit_bundle_dir}"; then
     bash "${_rnf_shkit_bundle_dir}/install.sh"
@@ -51,10 +51,10 @@ if [ -n "${RNF_SHKIT_INSTALL_BUNDLE:-}" ]; then
   rm -rf "${_rnf_shkit_bundle_dir}"
   unset _rnf_shkit_bundle_dir
 else
-  curl -fsSL "https://github.com/${RNF_GITHUB_ORG}/shkit/releases/latest/download/install.sh" | bash
+  curl --proto '=https' --tlsv1.2 -fsSL "https://github.com/${RNF_GITHUB_ORG}/shkit/releases/latest/download/install.sh" | bash
 fi
 _rnf_shkit_loaded=1
-if [ -f "${RNF_HOME}/shkit/current/shkit.sh" ]; then
+if [[ -f "${RNF_HOME}/shkit/current/shkit.sh" ]]; then
   source "${RNF_HOME}/shkit/current/shkit.sh"
   _rnf_shkit_loaded=$?
 fi
@@ -63,11 +63,13 @@ fi
 # @arg $1 string Path to the file to hash.
 # @stdout The hex-encoded sha256 digest.
 function _rnf_sha256_of() {
+  local file="$1"
   if command -v sha256sum >/dev/null 2>&1; then
-    sha256sum "$1" | awk '{print $1}'
+    sha256sum "${file}" | awk '{print $1}'
   else
-    shasum -a 256 "$1" | awk '{print $1}'
+    shasum -a 256 "${file}" | awk '{print $1}'
   fi
+  return 0
 }
 
 # @description Compare a file against a sha256 sidecar.
@@ -76,8 +78,9 @@ function _rnf_sha256_of() {
 # @exitcode 0 The digests match.
 # @exitcode 1 The digests differ.
 function _rnf_verify_checksum() {
-  if [ "$(awk '{print $1}' "$2")" != "$(_rnf_sha256_of "$1")" ]; then
-    log_error "checksum mismatch for $1"
+  local file="$1" sidecar="$2"
+  if [[ "$(awk '{print $1}' "${sidecar}")" != "$(_rnf_sha256_of "${file}")" ]]; then
+    log_error "checksum mismatch for ${file}"
     return 1
   fi
 }
@@ -109,10 +112,10 @@ function _rnf_read_dist_version() {
 function _rnf_acquire_install_lock() {
   local lock_dir="$1" waited=0
   while ! mkdir "${lock_dir}" 2>/dev/null; do
-    if [ "${waited}" -eq 0 ]; then
+    if [[ "${waited}" -eq 0 ]]; then
       log_info "waiting for install lock ${lock_dir} (held by another install) ..."
     fi
-    if [ "${waited}" -ge 30 ]; then
+    if [[ "${waited}" -ge 30 ]]; then
       log_error "could not acquire install lock ${lock_dir}"
       return 1
     fi
@@ -155,7 +158,7 @@ function _rnf_install_config_checkout() {
     return 1
   fi
 
-  if [ ! -e "${config_home}" ]; then
+  if [[ ! -e "${config_home}" ]]; then
     log_info "cloning macsetup config from ${RNFMAC_CONFIG_REPO_URL} ..."
     git clone --quiet --branch main --single-branch "${RNFMAC_CONFIG_REPO_URL}" "${config_home}" || return 1
   else
@@ -166,18 +169,18 @@ function _rnf_install_config_checkout() {
     ## uncommitted config edits are the normal state of a working checkout — hold
     ## them aside for the fast-forward rather than making an install refuse to run
     local stashed=0
-    if [ -n "$(git -C "${config_home}" status --porcelain)" ]; then
+    if [[ -n "$(git -C "${config_home}" status --porcelain)" ]]; then
       log_info "holding local config changes aside while updating ..."
       git -C "${config_home}" stash push --quiet --include-untracked --message "rnfmac install" || return 1
       stashed=1
     fi
     if ! git -C "${config_home}" pull --quiet --ff-only origin main; then
-      if [ "${stashed}" -eq 1 ]; then
+      if [[ "${stashed}" -eq 1 ]]; then
         git -C "${config_home}" stash pop --quiet
       fi
       return 1
     fi
-    if [ "${stashed}" -eq 1 ] && ! git -C "${config_home}" stash pop --quiet; then
+    if [[ "${stashed}" -eq 1 ]] && ! git -C "${config_home}" stash pop --quiet; then
       log_error "local config changes conflict with origin/main — resolve the conflicts in ${config_home}"
       return 1
     fi
@@ -194,14 +197,16 @@ function _rnf_install_config_checkout() {
 # @exitcode 1 Unrecognized or incomplete arguments.
 function _rnf_parse_install_args() {
   _RNF_ARCHIVE=""
-  while [ $# -gt 0 ]; do
-    case "$1" in
+  while [[ $# -gt 0 ]]; do
+    local arg="$1"
+    case "${arg}" in
     --archive)
-      if [ -z "${2:-}" ]; then
+      local archive_path="${2:-}"
+      if [[ -z "${archive_path}" ]]; then
         log_error "usage: . install.sh [--archive <path>]"
         return 1
       fi
-      _RNF_ARCHIVE="$2"
+      _RNF_ARCHIVE="${archive_path}"
       shift 2
       ;;
     *)
@@ -224,7 +229,7 @@ function _rnf_parse_install_args() {
 # @exitcode 0 Installed (or already up to date).
 # @exitcode 1 shkit failed to load, bad arguments, or an install step failed.
 function rnfmac_install() {
-  if [ "${_rnf_shkit_loaded}" -ne 0 ]; then
+  if [[ "${_rnf_shkit_loaded}" -ne 0 ]]; then
     echo "install.sh: failed to load shkit" >&2
     return 1
   fi
@@ -239,16 +244,16 @@ function rnfmac_install() {
   ## In-path install: an unpacked release dist has VERSION directly alongside this
   ## script; a git checkout has it one level up (src/install.sh, VERSION at repo root).
   src_root="$(dirname "${SELF_PATH}")"
-  if [ -f "${src_root}/VERSION" ]; then
+  if [[ -f "${src_root}/VERSION" ]]; then
     version_file="${src_root}/VERSION"
-  elif [ -f "$(dirname "${src_root}")/VERSION" ]; then
+  elif [[ -f "$(dirname "${src_root}")/VERSION" ]]; then
     version_file="$(dirname "${src_root}")/VERSION"
   fi
 
-  if [ -n "${_RNF_ARCHIVE}" ]; then
+  if [[ -n "${_RNF_ARCHIVE}" ]]; then
     ## Archive install: an explicit tarball wins over whatever sits next to this
     ## script — the caller named the payload, so detection must not second-guess it.
-    if [ ! -f "${_RNF_ARCHIVE}" ]; then
+    if [[ ! -f "${_RNF_ARCHIVE}" ]]; then
       log_error "archive not found: ${_RNF_ARCHIVE}"
       return 1
     fi
@@ -257,7 +262,7 @@ function rnfmac_install() {
     tmp_dir="$(mktemp -d)" || return 1
     ## a sidecar beside the archive is honoured exactly as the release one is; an
     ## archive moved by hand is the case most likely to have been truncated
-    if [ -f "${_RNF_ARCHIVE}.sha256" ]; then
+    if [[ -f "${_RNF_ARCHIVE}.sha256" ]]; then
       _rnf_verify_checksum "${_RNF_ARCHIVE}" "${_RNF_ARCHIVE}.sha256" || {
         rm -rf "${tmp_dir}"
         return 1
@@ -274,7 +279,7 @@ function rnfmac_install() {
       return 1
     }
     version_file="${extract_dir}/VERSION"
-  elif [ -n "${version_file}" ] && [ -f "${src_root}/rnfmac.sh" ]; then
+  elif [[ -n "${version_file}" ]] && [[ -f "${src_root}/rnfmac.sh" ]]; then
     extract_dir="${src_root}"
   else
     ## Streaming install: curled with no sibling dist — download the unversioned
@@ -284,9 +289,9 @@ function rnfmac_install() {
     local tmp_tarball="${tmp_dir}/macsetup.tar.gz"
 
     log_info "downloading latest release of ${github_repo} ..."
-    curl -fsSL -o "${tmp_tarball}" "https://github.com/${github_repo}/releases/latest/download/macsetup.tar.gz" || return 1
+    curl --proto '=https' --tlsv1.2 -fsSL -o "${tmp_tarball}" "https://github.com/${github_repo}/releases/latest/download/macsetup.tar.gz" || return 1
 
-    if curl -fsSL -o "${tmp_tarball}.sha256" "https://github.com/${github_repo}/releases/latest/download/macsetup.tar.gz.sha256" 2>/dev/null; then
+    if curl --proto '=https' --tlsv1.2 -fsSL -o "${tmp_tarball}.sha256" "https://github.com/${github_repo}/releases/latest/download/macsetup.tar.gz.sha256" 2>/dev/null; then
       _rnf_verify_checksum "${tmp_tarball}" "${tmp_tarball}.sha256" || return 1
     else
       log_warning "no checksum found for ${github_repo} release tarball, skipping verification"
@@ -303,7 +308,7 @@ function rnfmac_install() {
   tag="v${version}"
   dist_path="${product_home}/${tag}"
 
-  if [ -f "${product_home}/current/VERSION" ] && [ "$(cat "${product_home}/current/VERSION")" = "${version}" ]; then
+  if [[ -f "${product_home}/current/VERSION" ]] && [[ "$(cat "${product_home}/current/VERSION")" = "${version}" ]]; then
     log_success "already on the latest release (${tag})"
   else
     log_notice "installing macsetup ${tag} ..."
@@ -314,24 +319,24 @@ function rnfmac_install() {
 
     ## canonicalize before comparing — extract_dir is fully resolved, dist_path may not be
     local install_rc=0
-    if [ "$(readlink -f "${extract_dir}" 2>/dev/null)" != "$(readlink -f "${dist_path}" 2>/dev/null)" ]; then
+    if [[ "$(readlink -f "${extract_dir}" 2>/dev/null)" != "$(readlink -f "${dist_path}" 2>/dev/null)" ]]; then
       _rnf_atomic_install "${extract_dir}" "${dist_path}"
       install_rc=$?
       ## only needed here: a checkout's VERSION lives outside extract_dir (one
       ## level up), so the atomic copy above didn't already bring it along —
       ## skipped on the re-run-in-place path above, where src == dist_path/VERSION
       ## already and `cp -f` onto itself would error
-      [ "${install_rc}" -eq 0 ] && { cp -f "${version_file}" "${dist_path}/VERSION" || install_rc=1; }
+      [[ "${install_rc}" -eq 0 ]] && { cp -f "${version_file}" "${dist_path}/VERSION" || install_rc=1; }
     fi
     rm -rf "${lock_dir}"
-    [ "${install_rc}" -eq 0 ] || return 1
+    [[ "${install_rc}" -eq 0 ]] || return 1
 
     ln -sfn "${tag}" "${product_home}/current" || return 1
     ln -sfn "../macsetup/current/rnfmac.sh" "${rnf_home}/bin/rnfmac" || return 1
     ln -sfn "../macsetup/current/completions/_rnfmac" "${rnf_home}/completions/_rnfmac" || return 1
     log_success "distribution installed (current -> ${tag})"
   fi
-  [ -n "${tmp_dir}" ] && rm -rf "${tmp_dir}"
+  [[ -n "${tmp_dir}" ]] && rm -rf "${tmp_dir}"
 
   _rnf_install_config_checkout "${product_home}" || return 1
 
@@ -348,7 +353,7 @@ rnfmac_install "$@"
 _rnfmac_install_status=$?
 unset -f rnfmac_install _rnf_parse_install_args _rnf_sha256_of _rnf_verify_checksum _rnf_read_dist_version _rnf_acquire_install_lock _rnf_atomic_install _rnf_install_config_checkout
 unset _rnf_shkit_loaded _RNF_ARCHIVE
-if [ "${_rnfmac_install_status}" -eq 0 ]; then
+if [[ "${_rnfmac_install_status}" -eq 0 ]]; then
   ## PATH for the current shell — the payoff of sourcing this script
   export PATH="${HOME}/.rn-forge/bin:${PATH}"
   unset _rnfmac_install_status

@@ -46,7 +46,7 @@ function show_remote_state() {
 
   local behind
   behind="$(config_git rev-list --count "HEAD..origin/${CONFIG_BRANCH}")"
-  if [ "${behind}" -eq 0 ]; then
+  if [[ "${behind}" -eq 0 ]]; then
     echo "remote:   up to date with origin/${CONFIG_BRANCH}"
     return 0
   fi
@@ -63,7 +63,7 @@ function show_remote_state() {
 # @noargs
 # @stdout The local-changes block, or nothing beyond a success note when clean.
 function show_local_changes() {
-  if [ -z "$(config_git status --porcelain)" ]; then
+  if [[ -z "$(config_git status --porcelain)" ]]; then
     echo ""
     log_success "no local changes"
     return 0
@@ -79,7 +79,7 @@ function show_local_changes() {
 
   local file
   while IFS= read -r file; do
-    [ -n "${file}" ] || continue
+    [[ -n "${file}" ]] || continue
     config_git diff --no-index -- /dev/null "${file}" || true
   done < <(config_git ls-files --others --exclude-standard)
 

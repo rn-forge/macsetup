@@ -12,7 +12,7 @@ set -eo pipefail
 SELF_PATH="$(readlink -f "$0")"
 DIST_ROOT="$(dirname "$(dirname "${SELF_PATH}")")" # unpacked dist root, or src/ in a git checkout
 
-if [ -f "${DIST_ROOT}/VERSION" ]; then
+if [[ -f "${DIST_ROOT}/VERSION" ]]; then
   cat "${DIST_ROOT}/VERSION"
 else
   cat "$(dirname "${DIST_ROOT}")/VERSION"

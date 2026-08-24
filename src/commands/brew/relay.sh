@@ -94,7 +94,7 @@ function parse_args() {
     esac
   done
 
-  if [ "${FORCE_FLAG}" -eq 1 ] && [ "${RESET_FLAG}" -eq 1 ]; then
+  if [[ "${FORCE_FLAG}" -eq 1 ]] && [[ "${RESET_FLAG}" -eq 1 ]]; then
     echo "rnfmac: --force and --reset are mutually exclusive" >&2
     usage >&2
     exit 1
@@ -105,7 +105,7 @@ function parse_args() {
 # @noargs
 # @exitcode 1 `HOMEBREW_PREFIX` does not exist.
 function ensure_compatible_system() {
-  if [ ! -d "${HOMEBREW_PREFIX}" ]; then
+  if [[ ! -d "${HOMEBREW_PREFIX}" ]]; then
     log_warning "this system is not compatible with the Homebrew relay — ${HOMEBREW_PREFIX} not found (Apple Silicon Homebrew installs only)"
     exit 1
   fi
@@ -126,7 +126,7 @@ function ensure_homebrew_repo() {
   ## defensive: -C scopes git to HOMEBREW_PREFIX, but show-toplevel walks up to the
   ## enclosing repo root — refuse to run destructive resets against a repo larger
   ## than HOMEBREW_PREFIX itself (e.g. HOMEBREW_PREFIX nested inside another checkout)
-  if [ "$(readlink -f "${toplevel}")" != "$(readlink -f "${HOMEBREW_PREFIX}")" ]; then
+  if [[ "$(readlink -f "${toplevel}")" != "$(readlink -f "${HOMEBREW_PREFIX}")" ]]; then
     log_warning "${HOMEBREW_PREFIX} is not the root of its git repository (root is ${toplevel}) — refusing to operate on it"
     exit 1
   fi
@@ -159,7 +159,7 @@ function brew_git_with_identity() {
 # @exitcode 0 HEAD's subject matches `RELAY_COMMIT_SUBJECT`.
 # @exitcode 1 It does not.
 function head_is_relay_commit() {
-  [ "$(brew_git log -1 --pretty=%s 2>/dev/null)" = "${RELAY_COMMIT_SUBJECT}" ]
+  [[ "$(brew_git log -1 --pretty=%s 2>/dev/null)" = "${RELAY_COMMIT_SUBJECT}" ]]
 }
 
 # @description Reset `HOMEBREW_PREFIX` back to its clean upstream base: drops the
@@ -209,7 +209,7 @@ function apply_relay() {
     fi
   done
 
-  if [ "${conflicted}" -eq 1 ]; then
+  if [[ "${conflicted}" -eq 1 ]]; then
     log_warning "conflicts applying relay patches — see conflicted files above"
     reset_homebrew_to_clean_base
     log_warning "reset Homebrew back to its clean base; regenerate patches with 'rnfmac brew relay --regen'"
@@ -256,7 +256,7 @@ function reset_relay() {
 # @exitcode 1 Not run from a git checkout, or HEAD is already the relay commit.
 function regen_patches() {
   local managed target
-  if [ -z "$(checkout_root)" ]; then
+  if [[ -z "$(checkout_root)" ]]; then
     log_warning "'--regen' requires a git checkout — run via 'src/rnfmac.sh brew relay --regen' from the macsetup checkout"
     exit 1
   fi
@@ -269,7 +269,7 @@ function regen_patches() {
   for managed in "${MANAGED_HOMEBREW_FILES[@]}"; do
     target="${PATCH_PATH}/$(basename "${managed}").patch"
     brew_git diff --no-color HEAD -- "${managed}" >"${target}"
-    if [ ! -s "${target}" ]; then
+    if [[ ! -s "${target}" ]]; then
       log_warning "no diff found for ${managed} — is it hand-edited in ${HOMEBREW_PREFIX}?"
     fi
     log_success "regenerated $(basename "${managed}").patch"
@@ -284,11 +284,11 @@ function execute() {
   ensure_compatible_system
   ensure_homebrew_repo
 
-  if [ "${REGEN_FLAG}" -eq 1 ]; then
+  if [[ "${REGEN_FLAG}" -eq 1 ]]; then
     regen_patches
-  elif [ "${RESET_FLAG}" -eq 1 ]; then
+  elif [[ "${RESET_FLAG}" -eq 1 ]]; then
     reset_relay
-  elif [ "${FORCE_FLAG}" -eq 1 ]; then
+  elif [[ "${FORCE_FLAG}" -eq 1 ]]; then
     force_relay
   else
     ensure_relay_applied

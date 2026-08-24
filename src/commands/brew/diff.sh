@@ -68,13 +68,13 @@ function report_diff() {
 
   local extras
   extras="$(brew bundle cleanup --file="${BREWFILE}" 2>/dev/null | sed '/^Would `brew cleanup`:$/,$d')" || true
-  if [ -n "${extras}" ]; then
+  if [[ -n "${extras}" ]]; then
     extra=1
     log_warning "installed but not in Brewfile:"
     echo "${extras}"
   fi
 
-  if [ "${missing}" -eq 0 ] && [ "${extra}" -eq 0 ]; then
+  if [[ "${missing}" -eq 0 ]] && [[ "${extra}" -eq 0 ]]; then
     log_success "no drift — installed packages match the Brewfile"
     return 0
   fi
@@ -133,7 +133,7 @@ function write_brewfile() {
 #   otherwise report drift.
 # @noargs
 function execute() {
-  if [ "${WRITE_FLAG}" -eq 1 ]; then
+  if [[ "${WRITE_FLAG}" -eq 1 ]]; then
     write_brewfile
     return 0
   fi

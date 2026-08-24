@@ -15,11 +15,14 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install mise tools (shellcheck, shfmt)
-        uses: jdx/mise-action@v2
+        uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2
 
       - name: Install ShellSpec
         run: |
-          curl -fsSL https://raw.githubusercontent.com/shellspec/shellspec/master/install.sh | sh -s -- --yes
+          curl -fsSL --proto '=https' --tlsv1.2 -o /tmp/shellspec-install.sh \
+            https://raw.githubusercontent.com/shellspec/shellspec/f2d13f991885ef44e6b54e571e0842222251b111/install.sh
+          echo "4cac73d958d1ca8c502f3aff1a3b3cfa46ab0062f81f1cc522b83b7b2b302175  /tmp/shellspec-install.sh" | sha256sum -c -
+          sh /tmp/shellspec-install.sh --yes
 
       - name: Install gawk
         run: brew install gawk
@@ -87,7 +90,7 @@ jobs:
 
       - name: Publish GitHub Release
         if: steps.tag.outputs.tag_pushed == 'true'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           tag_name: v${{ steps.read_version.outputs.version }}
           generate_release_notes: true

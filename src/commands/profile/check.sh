@@ -26,7 +26,8 @@ PROBLEMS=0
 # @arg $1 string The warning message.
 # @set PROBLEMS Set to 1.
 function report_problem() {
-  log_warning "$1"
+  local message="$1"
+  log_warning "${message}"
   PROBLEMS=1
 }
 
@@ -39,7 +40,7 @@ function report_problem() {
 # @exitcode 1 No profile for this host (reported via `report_problem`).
 function check_host_profile() {
   local host_profile="${CONFIG_HOME}/hosts/${HOST_NAME}/profile.zsh"
-  if [ ! -f "${host_profile}" ]; then
+  if [[ ! -f "${host_profile}" ]]; then
     report_problem "no profile for host '${HOST_NAME}' — create hosts/${HOST_NAME}/ in macsetup-config"
     return 1
   fi
@@ -52,7 +53,7 @@ function check_rendered_profile() {
   tmp_profile="$(mktemp)"
   render_profile_content >"${tmp_profile}"
 
-  if [ ! -f "${PRODUCT_HOME}/profile.zsh" ]; then
+  if [[ ! -f "${PRODUCT_HOME}/profile.zsh" ]]; then
     report_problem "no rendered profile at ${PRODUCT_HOME}/profile.zsh — run 'rnfmac profile sync'"
   elif ! diff -q "${tmp_profile}" "${PRODUCT_HOME}/profile.zsh" >/dev/null 2>&1; then
     report_problem "rendered profile.zsh is stale — run 'rnfmac profile sync'"
@@ -92,7 +93,7 @@ function execute() {
 ${__SOURCED__:+return} # shellspec Include guard
 
 execute
-if [ "${PROBLEMS}" -eq 0 ]; then
+if [[ "${PROBLEMS}" -eq 0 ]]; then
   log_success "profile check passed"
 fi
 exit "${PROBLEMS}"

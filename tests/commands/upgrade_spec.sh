@@ -10,6 +10,7 @@ AfterEach 'cleanup_sandbox'
 setup_upgrade() {
   setup_sandbox
   run_sync_from_checkout >/dev/null 2>&1 # install CHECKOUT_VERSION first
+  return 0
 }
 
 It 'downloads the latest release, installs it, and flips current'

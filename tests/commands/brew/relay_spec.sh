@@ -31,6 +31,7 @@ setup_relay() {
   git -C "${HOMEBREW_PREFIX}" init -q
   git -C "${HOMEBREW_PREFIX}" add -A
   git -C "${HOMEBREW_PREFIX}" -c user.name=spec -c user.email=spec@test commit -q -m 'baseline'
+  return 0
 }
 
 It 'shows usage for help'
@@ -110,6 +111,7 @@ write_regen_driver() {
     echo "exec '${HOME}/.rn-forge/macsetup/current/commands/brew/relay.sh' --regen"
   } >"${DRIVER}"
   chmod +x "${DRIVER}"
+  return 0
 }
 run_sync_from_checkout >/dev/null 2>&1
 write_regen_driver

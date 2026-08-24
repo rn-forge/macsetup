@@ -24,11 +24,12 @@ MESSAGE=""
 # @arg $@ string Command arguments.
 # @exitcode 1 Arguments are missing or invalid.
 function parse_args() {
-  if [ -z "${2+x}" ] || [ -n "${3+x}" ] || { [ "$1" != "-m" ] && [ "$1" != "--message" ]; } || [ -z "$2" ]; then
+  local flag="$1" message="$2"
+  if [[ $# -ne 2 ]] || { [[ "${flag}" != "-m" ]] && [[ "${flag}" != "--message" ]]; } || [[ -z "${message}" ]]; then
     echo "usage: rnfmac config push -m <message>" >&2
     return 1
   fi
-  MESSAGE="$2"
+  MESSAGE="${message}"
 }
 
 # @description Fast-forward onto origin/main, then commit all config checkout
@@ -38,7 +39,7 @@ function parse_args() {
 function execute() {
   require_config_checkout
 
-  if [ -z "$(git -C "${CONFIG_HOME}" status --porcelain)" ]; then
+  if [[ -z "$(git -C "${CONFIG_HOME}" status --porcelain)" ]]; then
     log_error "macsetup config has no changes to publish"
     return 1
   fi

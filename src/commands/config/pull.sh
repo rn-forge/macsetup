@@ -29,7 +29,7 @@ function execute() {
   update_config_checkout
   log_success "macsetup config is current ($(git -C "${CONFIG_HOME}" rev-parse --short HEAD))"
 
-  if [ -n "$(git -C "${CONFIG_HOME}" status --porcelain)" ]; then
+  if [[ -n "$(git -C "${CONFIG_HOME}" status --porcelain)" ]]; then
     log_notice "local config changes are still unpublished — see 'rnfmac config status'"
   fi
 }

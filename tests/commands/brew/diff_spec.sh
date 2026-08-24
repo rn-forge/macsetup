@@ -28,6 +28,7 @@ exit 1
 STUB
   chmod +x "${SANDBOX}/mocks/brew"
   export PATH="${SANDBOX}/mocks:${PATH}"
+  return 0
 }
 
 It '--write updates the current host Brewfile in macsetup-config'

@@ -29,7 +29,7 @@ source "$(dirname "${SELF_PATH}")/lib.sh"
 #   it's identical to the most recent backup already taken.
 # @arg $1 string Path to the file to back up. No-op if it doesn't exist.
 function backup() {
-  if [ ! -f "${1}" ]; then
+  if [[ ! -f "${1}" ]]; then
     return
   fi
   local backup_path backup_prefix last_backup
@@ -41,7 +41,7 @@ function backup() {
   mkdir -p "${backup_path}"
 
   last_backup=$(ls -t "${backup_prefix}"* 2>/dev/null || true | head -1)
-  if [ -n "${last_backup}" ] && diff -q "${1}" "${last_backup}" &>/dev/null; then
+  if [[ -n "${last_backup}" ]] && diff -q "${1}" "${last_backup}" &>/dev/null; then
     return
   fi
   cp -fr "${1}" "${backup_prefix}$(date +%Y%m%d%H%M%S)"
@@ -97,13 +97,13 @@ function render_profile() {
   log_verbose "Rendering profile for host '${HOST_NAME}' ..."
   local host_profile="${CONFIG_HOME}/hosts/${HOST_NAME}/profile.zsh"
 
-  if [ ! -f "${host_profile}" ]; then
+  if [[ ! -f "${host_profile}" ]]; then
     log_warning "no profile for host '${HOST_NAME}' — create hosts/${HOST_NAME}/ in macsetup-config"
     exit 1
   fi
 
   render_profile_content >"${PRODUCT_HOME}/profile.zsh"
-  if [ ! -f "${CONFIG_HOME}/hosts/${HOST_NAME}/Brewfile" ]; then
+  if [[ ! -f "${CONFIG_HOME}/hosts/${HOST_NAME}/Brewfile" ]]; then
     log_warning "no Brewfile for host '${HOST_NAME}' — create hosts/${HOST_NAME}/Brewfile in macsetup-config"
     exit 1
   fi

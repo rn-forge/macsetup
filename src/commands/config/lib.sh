@@ -17,11 +17,12 @@ CONFIG_REPO_URL="${RNFMAC_CONFIG_REPO_URL:-https://github.com/${RNF_GITHUB_ORG:-
 # @exitcode 0 The checkout exists and is on the expected branch.
 # @exitcode 1 Clone or checkout validation failed.
 function ensure_config_checkout() {
-  if [ ! -e "${CONFIG_HOME}" ]; then
+  if [[ ! -e "${CONFIG_HOME}" ]]; then
     log_info "cloning macsetup config from ${CONFIG_REPO_URL} ..."
     git clone --quiet --branch "${CONFIG_BRANCH}" --single-branch "${CONFIG_REPO_URL}" "${CONFIG_HOME}"
   fi
   require_config_checkout
+  return $?
 }
 
 # @description Verify that the macsetup-config checkout exists and is on `main`.
@@ -36,7 +37,7 @@ function require_config_checkout() {
 
   local branch
   branch="$(git -C "${CONFIG_HOME}" branch --show-current)"
-  if [ "${branch}" != "${CONFIG_BRANCH}" ]; then
+  if [[ "${branch}" != "${CONFIG_BRANCH}" ]]; then
     log_error "macsetup config must be on '${CONFIG_BRANCH}' (currently '${branch:-detached}')"
     return 1
   fi
@@ -57,7 +58,7 @@ function update_config_checkout() {
   local local_head remote_head
   local_head="$(git -C "${CONFIG_HOME}" rev-parse HEAD)"
   remote_head="$(git -C "${CONFIG_HOME}" rev-parse "origin/${CONFIG_BRANCH}")"
-  if [ "${local_head}" = "${remote_head}" ]; then
+  if [[ "${local_head}" = "${remote_head}" ]]; then
     return 0
   fi
 
@@ -67,7 +68,7 @@ function update_config_checkout() {
   fi
 
   local stashed=0
-  if [ -n "$(git -C "${CONFIG_HOME}" status --porcelain)" ]; then
+  if [[ -n "$(git -C "${CONFIG_HOME}" status --porcelain)" ]]; then
     log_info "holding local config changes aside while updating ..."
     git -C "${CONFIG_HOME}" stash push --quiet --include-untracked --message "rnfmac config update" || return 1
     stashed=1
@@ -75,7 +76,7 @@ function update_config_checkout() {
 
   if ! git -C "${CONFIG_HOME}" merge --quiet --ff-only "origin/${CONFIG_BRANCH}"; then
     log_error "could not fast-forward macsetup config to origin/${CONFIG_BRANCH}"
-    if [ "${stashed}" -eq 1 ]; then
+    if [[ "${stashed}" -eq 1 ]]; then
       git -C "${CONFIG_HOME}" stash pop --quiet
     fi
     return 1
@@ -83,7 +84,7 @@ function update_config_checkout() {
 
   log_info "updated macsetup config to $(git -C "${CONFIG_HOME}" rev-parse --short HEAD)"
 
-  if [ "${stashed}" -eq 1 ] && ! git -C "${CONFIG_HOME}" stash pop --quiet; then
+  if [[ "${stashed}" -eq 1 ]] && ! git -C "${CONFIG_HOME}" stash pop --quiet; then
     log_error "local config changes conflict with origin/${CONFIG_BRANCH} — resolve the conflicts in ${CONFIG_HOME}, then run 'rnfmac config push -m <message>'"
     return 1
   fi

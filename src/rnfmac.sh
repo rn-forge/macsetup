@@ -23,7 +23,8 @@ COMMANDS_PATH="$(dirname "${SELF_PATH}")/commands"
 # @exitcode 0 If `$1` is the reserved name "lib".
 # @exitcode 1 Otherwise.
 function is_lib_name() {
-  [ "$1" = "lib" ]
+  local name="$1"
+  [[ "${name}" = "lib" ]]
 }
 
 # @description List top-level sub-commands (commands/*.sh) and sub-command groups
@@ -32,14 +33,14 @@ function is_lib_name() {
 function list_top_level() {
   local script name
   for script in "${COMMANDS_PATH}"/*.sh; do
-    [ -e "${script}" ] || continue
+    [[ -e "${script}" ]] || continue
     name="$(basename "${script}" .sh)"
     is_lib_name "${name}" && continue
     echo "  ${name//_/-}"
   done
   local dir
   for dir in "${COMMANDS_PATH}"/*/; do
-    [ -d "${dir}" ] || continue
+    [[ -d "${dir}" ]] || continue
     name="$(basename "${dir}")"
     is_lib_name "${name}" && continue
     echo "  ${name//_/-} ..."
@@ -52,7 +53,7 @@ function list_top_level() {
 function list_group() {
   local group_path="$1" script name
   for script in "${group_path}"/*.sh; do
-    [ -e "${script}" ] || continue
+    [[ -e "${script}" ]] || continue
     name="$(basename "${script}" .sh)"
     is_lib_name "${name}" && continue
     echo "  ${name//_/-}"
@@ -79,7 +80,7 @@ function group_usage() {
   list_group "${COMMANDS_PATH}/${group}"
 }
 
-if [ $# -eq 0 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "help" ]; then
+if [[ $# -eq 0 ]] || [[ "$1" = "-h" ]] || [[ "$1" = "--help" ]] || [[ "$1" = "help" ]]; then
   usage
   exit 0
 fi
@@ -95,9 +96,9 @@ if is_lib_name "${SUB_COMMAND//-/_}"; then
   exit 1
 fi
 
-if [ -d "${GROUP_DIR}" ]; then
+if [[ -d "${GROUP_DIR}" ]]; then
   shift
-  if [ $# -eq 0 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "help" ]; then
+  if [[ $# -eq 0 ]] || [[ "$1" = "-h" ]] || [[ "$1" = "--help" ]] || [[ "$1" = "help" ]]; then
     group_usage "${SUB_COMMAND//-/_}"
     exit 0
   fi
@@ -105,7 +106,7 @@ if [ -d "${GROUP_DIR}" ]; then
   GROUP_SUB_COMMAND="$1"
   shift
   SUB_COMMAND_SCRIPT="${GROUP_DIR}/${GROUP_SUB_COMMAND//-/_}.sh"
-  if is_lib_name "${GROUP_SUB_COMMAND//-/_}" || [ ! -x "${SUB_COMMAND_SCRIPT}" ]; then
+  if is_lib_name "${GROUP_SUB_COMMAND//-/_}" || [[ ! -x "${SUB_COMMAND_SCRIPT}" ]]; then
     echo "rnfmac: unknown sub-command '${SUB_COMMAND} ${GROUP_SUB_COMMAND}'" >&2
     group_usage "${SUB_COMMAND//-/_}" >&2
     exit 1
@@ -116,7 +117,7 @@ fi
 
 shift
 SUB_COMMAND_SCRIPT="${COMMANDS_PATH}/${SUB_COMMAND//-/_}.sh"
-if [ ! -x "${SUB_COMMAND_SCRIPT}" ]; then
+if [[ ! -x "${SUB_COMMAND_SCRIPT}" ]]; then
   echo "rnfmac: unknown sub-command '${SUB_COMMAND}'" >&2
   usage >&2
   exit 1

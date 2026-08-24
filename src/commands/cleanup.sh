@@ -31,20 +31,20 @@ PRODUCT_HOME="${RNF_HOME}/macsetup"
 function execute() {
   local current_version dir name to_remove=() removed=0
 
-  if [ ! -L "${PRODUCT_HOME}/current" ]; then
+  if [[ ! -L "${PRODUCT_HOME}/current" ]]; then
     log_error "no current install found at ${PRODUCT_HOME}/current"
     exit 1
   fi
   current_version="$(basename "$(readlink "${PRODUCT_HOME}/current")")"
 
   for dir in "${PRODUCT_HOME}"/v*/; do
-    [ -d "${dir}" ] || continue
+    [[ -d "${dir}" ]] || continue
     name="$(basename "${dir}")"
-    [ "${name}" = "${current_version}" ] && continue
+    [[ "${name}" = "${current_version}" ]] && continue
     to_remove+=("${dir}")
   done
 
-  if [ "${#to_remove[@]}" -eq 0 ]; then
+  if [[ "${#to_remove[@]}" -eq 0 ]]; then
     log_success "nothing to clean up — only ${current_version} is installed"
     return
   fi

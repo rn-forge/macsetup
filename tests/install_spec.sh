@@ -11,6 +11,8 @@ Describe 'install.sh'
 BeforeEach 'setup_install'
 AfterEach 'cleanup_sandbox'
 
+SHELL_ALIVE_RC1='shell-alive rc=1'
+
 setup_install() {
   setup_sandbox
   build_release_tarball # stage v9.9.9 for the curl stub (streaming mode)
@@ -22,6 +24,7 @@ setup_install() {
   cp "${SHELLSPEC_PROJECT_ROOT}/src/install.sh" "${STANDALONE_INSTALL_SH}"
   INSTALL_SH="${STANDALONE_INSTALL_SH}"
   export INSTALL_SH
+  return 0
 }
 
 It 'installs the latest release and installs shkit locally'
@@ -45,6 +48,7 @@ It 'is idempotent — a second run no-ops'
 install_twice() {
   "${INSTALL_SH}" >/dev/null 2>&1
   "${INSTALL_SH}"
+  return $?
 }
 When call install_twice
 The status should be success
@@ -62,7 +66,7 @@ It 'does not kill the sourcing shell when the download fails'
 export RNF_TEST_RELEASE_TARBALL="/nonexistent/macsetup.tar.gz" # curl stub cp fails
 When run zsh -c '. "${INSTALL_SH}"; echo "shell-alive rc=$?"'
 The status should be success
-The output should include 'shell-alive rc=1'
+The output should include "${SHELL_ALIVE_RC1}"
 The error should include 'installation failed'
 End
 
@@ -70,7 +74,7 @@ It 'fails when the downloaded tarball checksum does not match its sidecar'
 export RNF_TEST_CORRUPT_CHECKSUM=1
 When run zsh -c '. "${INSTALL_SH}"; echo "shell-alive rc=$?"'
 The status should be success
-The output should include 'shell-alive rc=1'
+The output should include "${SHELL_ALIVE_RC1}"
 The error should include 'checksum mismatch'
 End
 
@@ -129,7 +133,7 @@ echo "0000000000000000000000000000000000000000000000000000000000000000  handoff.
 export ARCHIVE CHECKOUT_INSTALL_SH="${CHECKOUT}/src/install.sh"
 When run zsh -c '. "${CHECKOUT_INSTALL_SH}" --archive "${ARCHIVE}"; echo "shell-alive rc=$?"'
 The status should be success
-The output should include 'shell-alive rc=1'
+The output should include "${SHELL_ALIVE_RC1}"
 The error should include 'checksum mismatch'
 The path "${HOME}/.rn-forge/macsetup/v6.6.6" should not be exist
 End
@@ -138,7 +142,7 @@ It 'does not kill the sourcing shell when the --archive path is missing'
 export CHECKOUT_INSTALL_SH="${CHECKOUT}/src/install.sh"
 When run zsh -c '. "${CHECKOUT_INSTALL_SH}" --archive /nonexistent/macsetup.tar.gz; echo "shell-alive rc=$?"'
 The status should be success
-The output should include 'shell-alive rc=1'
+The output should include "${SHELL_ALIVE_RC1}"
 The error should include 'archive not found'
 End
 
@@ -146,7 +150,7 @@ It 'does not kill the sourcing shell on a bad installer argument'
 export CHECKOUT_INSTALL_SH="${CHECKOUT}/src/install.sh"
 When run zsh -c '. "${CHECKOUT_INSTALL_SH}" --bogus; echo "shell-alive rc=$?"'
 The status should be success
-The output should include 'shell-alive rc=1'
+The output should include "${SHELL_ALIVE_RC1}"
 The error should include 'usage: . install.sh [--archive <path>]'
 End
 
@@ -177,7 +181,7 @@ export RNF_SHKIT_INSTALL_BUNDLE="/nonexistent/shkit.tar.gz"
 export CHECKOUT_INSTALL_SH="${CHECKOUT}/src/install.sh"
 When run zsh -c '. "${CHECKOUT_INSTALL_SH}"; echo "shell-alive rc=$?"'
 The status should be success
-The output should include 'shell-alive rc=1'
+The output should include "${SHELL_ALIVE_RC1}"
 The error should include 'failed to extract RNF_SHKIT_INSTALL_BUNDLE'
 End
 End

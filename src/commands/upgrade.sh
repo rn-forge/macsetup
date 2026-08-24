@@ -36,10 +36,12 @@ function usage() {
 # @set ARCHIVE Path to a release tarball to install instead of downloading one.
 # @exitcode 1 Unrecognized or incomplete arguments.
 function parse_args() {
-  while [ $# -gt 0 ]; do
-    case "$1" in
+  local arg
+  while [[ $# -gt 0 ]]; do
+    arg="$1"
+    case "${arg}" in
     --archive)
-      if [ -z "${2:-}" ]; then
+      if [[ -z "${2:-}" ]]; then
         usage >&2
         exit 1
       fi
@@ -62,10 +64,11 @@ function parse_args() {
 # @arg $1 string Path to the file to hash.
 # @stdout The hex-encoded sha256 digest.
 function sha256_of() {
+  local file="$1"
   if command -v sha256sum >/dev/null 2>&1; then
-    sha256sum "$1" | awk '{print $1}'
+    sha256sum "${file}" | awk '{print $1}'
   else
-    shasum -a 256 "$1" | awk '{print $1}'
+    shasum -a 256 "${file}" | awk '{print $1}'
   fi
 }
 
@@ -75,8 +78,9 @@ function sha256_of() {
 # @exitcode 0 The digests match.
 # @exitcode 1 The digests differ.
 function verify_checksum() {
-  if [ "$(awk '{print $1}' "$2")" != "$(sha256_of "$1")" ]; then
-    log_error "checksum mismatch for $1"
+  local file="$1" sidecar="$2"
+  if [[ "$(awk '{print $1}' "${sidecar}")" != "$(sha256_of "${file}")" ]]; then
+    log_error "checksum mismatch for ${file}"
     return 1
   fi
 }
@@ -121,10 +125,10 @@ function atomic_install() {
 function acquire_install_lock() {
   local lock_dir="$1" waited=0
   while ! mkdir "${lock_dir}" 2>/dev/null; do
-    if [ "${waited}" -eq 0 ]; then
+    if [[ "${waited}" -eq 0 ]]; then
       log_info "waiting for install lock ${lock_dir} (held by another install) ..."
     fi
-    if [ "${waited}" -ge 30 ]; then
+    if [[ "${waited}" -ge 30 ]]; then
       log_error "could not acquire install lock ${lock_dir}"
       return 1
     fi
@@ -145,9 +149,9 @@ function fetch_release_tarball() {
   ## tag currently owns it, so no api.github.com call is needed up front; the
   ## tag is read from VERSION inside the downloaded tarball instead
   log_info "Downloading latest release of ${GITHUB_REPO} ..."
-  curl -fsSL -o "${tarball}" "https://github.com/${GITHUB_REPO}/releases/latest/download/macsetup.tar.gz"
+  curl -fsSL --proto '=https' --tlsv1.2 -o "${tarball}" "https://github.com/${GITHUB_REPO}/releases/latest/download/macsetup.tar.gz"
 
-  if curl -fsSL -o "${tarball}.sha256" "https://github.com/${GITHUB_REPO}/releases/latest/download/macsetup.tar.gz.sha256" 2>/dev/null; then
+  if curl -fsSL --proto '=https' --tlsv1.2 -o "${tarball}.sha256" "https://github.com/${GITHUB_REPO}/releases/latest/download/macsetup.tar.gz.sha256" 2>/dev/null; then
     verify_checksum "${tarball}" "${tarball}.sha256" || return 1
   else
     log_warning "no checksum found for ${GITHUB_REPO} release tarball, skipping verification"
@@ -161,7 +165,7 @@ function fetch_release_tarball() {
 function stage_local_archive() {
   local tarball="$1"
 
-  if [ ! -f "${ARCHIVE}" ]; then
+  if [[ ! -f "${ARCHIVE}" ]]; then
     log_error "archive not found: ${ARCHIVE}"
     return 1
   fi
@@ -169,7 +173,7 @@ function stage_local_archive() {
   log_info "Installing from local archive ${ARCHIVE} ..."
   ## a sidecar beside the archive is honoured exactly as the release one is; an
   ## archive moved by hand is the case most likely to have been truncated
-  if [ -f "${ARCHIVE}.sha256" ]; then
+  if [[ -f "${ARCHIVE}.sha256" ]]; then
     verify_checksum "${ARCHIVE}" "${ARCHIVE}.sha256" || return 1
   else
     log_warning "no ${ARCHIVE}.sha256 sidecar found, skipping verification"
@@ -187,7 +191,7 @@ function execute() {
   tmp_dir="$(mktemp -d)"
   tmp_tarball="${tmp_dir}/macsetup.tar.gz"
 
-  if [ -n "${ARCHIVE}" ]; then
+  if [[ -n "${ARCHIVE}" ]]; then
     stage_local_archive "${tmp_tarball}" || exit 1
   else
     fetch_release_tarball "${tmp_tarball}" || exit 1
@@ -202,10 +206,10 @@ function execute() {
   tag="v${version}"
 
   current_version=""
-  if [ -f "${PRODUCT_HOME}/current/VERSION" ]; then
+  if [[ -f "${PRODUCT_HOME}/current/VERSION" ]]; then
     current_version="v$(cat "${PRODUCT_HOME}/current/VERSION")"
   fi
-  if [ "${tag}" = "${current_version}" ]; then
+  if [[ "${tag}" = "${current_version}" ]]; then
     log_success "already on ${current_version}"
     rm -rf "${tmp_dir}"
   else

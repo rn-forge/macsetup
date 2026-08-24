@@ -45,18 +45,18 @@ function read_runtime_versions() {
   shared_file="${CONFIG_HOME}/shared/${runtime}-versions"
   host_file="${CONFIG_HOME}/hosts/${HOST_NAME}/${runtime}-versions"
 
-  if [ -f "${shared_file}" ]; then
+  if [[ -f "${shared_file}" ]]; then
     combined="${combined}$(cat "${shared_file}")
 "
   fi
-  if [ -f "${host_file}" ]; then
+  if [[ -f "${host_file}" ]]; then
     combined="${combined}$(cat "${host_file}")
 "
   fi
 
   combined="$(printf '%s\n' "${combined}" | sed 's/#.*//' | awk '{gsub(/^[ \t]+|[ \t]+$/, "")} NF && !seen[$0]++')"
 
-  if [ -z "${combined}" ]; then
+  if [[ -z "${combined}" ]]; then
     log_error "no ${runtime} versions configured — add shared/${runtime}-versions or hosts/${HOST_NAME}/${runtime}-versions to macsetup-config"
     return 1
   fi
@@ -90,7 +90,7 @@ function sync_python() {
     fi
   done <<<"${versions}"
 
-  if [ "${#installed[@]}" -eq 0 ]; then
+  if [[ "${#installed[@]}" -eq 0 ]]; then
     log_error "no python versions were installed"
     return 1
   fi
@@ -118,7 +118,7 @@ function sync_node() {
 
   while IFS= read -r spec; do
     log_verbose "Installing node ${spec} ..."
-    if [ "${spec}" = "lts" ]; then
+    if [[ "${spec}" = "lts" ]]; then
       if ! nvm install --lts; then
         log_error "node lts not available — skipping"
         failed=1
@@ -132,7 +132,7 @@ function sync_node() {
     installed+=("$(nvm current)")
   done <<<"${versions}"
 
-  if [ "${#installed[@]}" -eq 0 ]; then
+  if [[ "${#installed[@]}" -eq 0 ]]; then
     log_error "no node versions were installed"
     return 1
   fi
@@ -147,10 +147,8 @@ function sync_node() {
 #   as-is (an exact identifier); otherwise it's matched as a major-version prefix
 #   against the Identifier column — always the last `|`-delimited field, and the
 #   one column reliably tagged `-tem` for Temurin regardless of how the Vendor
-#   column is spelled (it print full names like "Temurin", not an abbreviation —
-#   matching on Vendor directly is what silently broke this sync previously: the
-#   filter matched nothing, the resolved version was empty, and `sdk install java
-#   ""` fell back to installing whatever SDKMAN's own default happened to be).
+#   column is spelled. Match on Identifier, not Vendor: Vendor's spelling isn't
+#   consistent enough to filter on.
 # @arg $1 string Version spec — a major version (`21`) or an exact identifier.
 # @arg $2 string The `sdk list java` output to search.
 # @stdout The resolved identifier, or nothing if no match was found.
@@ -189,7 +187,7 @@ function sync_java() {
 
   while IFS= read -r spec; do
     identifier="$(resolve_temurin_identifier "${spec}" "${available_java_versions}")"
-    if [ -z "${identifier}" ]; then
+    if [[ -z "${identifier}" ]]; then
       log_error "no Temurin build found for java '${spec}' — skipping"
       failed=1
       continue
@@ -203,7 +201,7 @@ function sync_java() {
     fi
   done <<<"${versions}"
 
-  if [ "${#installed[@]}" -eq 0 ]; then
+  if [[ "${#installed[@]}" -eq 0 ]]; then
     log_error "no java versions were installed"
     return 1
   fi

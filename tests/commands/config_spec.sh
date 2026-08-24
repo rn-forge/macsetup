@@ -5,9 +5,12 @@ Describe 'config commands'
 BeforeEach 'setup_config'
 AfterEach 'cleanup_sandbox'
 
+REMOTE_UPDATE_MARKER='# remote update'
+
 setup_config() {
   setup_sandbox
   install_dist_from_checkout
+  return 0
 }
 
 # advance the config origin by one commit, so the installed checkout is behind it
@@ -16,6 +19,7 @@ push_remote_commit() {
   git -C "${CONFIG_SEED}" add shared/profile.zsh
   git -C "${CONFIG_SEED}" commit -m 'Remote update' >/dev/null
   git -C "${CONFIG_SEED}" push origin main >/dev/null 2>&1
+  return 0
 }
 
 It 'shows checkout status and revision'
@@ -50,7 +54,7 @@ When run script "${HOME}/.rn-forge/bin/rnfmac" config status
 The status should be success
 The output should include 'behind origin/main'
 The output should include 'Remote update'
-The contents of file "${HOME}/.rn-forge/macsetup/config/shared/profile.zsh" should not include '# remote update'
+The contents of file "${HOME}/.rn-forge/macsetup/config/shared/profile.zsh" should not include "${REMOTE_UPDATE_MARKER}"
 End
 
 It 'pulls a new linear config commit'
@@ -58,7 +62,7 @@ push_remote_commit
 When run script "${HOME}/.rn-forge/bin/rnfmac" config pull
 The status should be success
 The output should include 'macsetup config is current'
-The contents of file "${HOME}/.rn-forge/macsetup/config/shared/profile.zsh" should include '# remote update'
+The contents of file "${HOME}/.rn-forge/macsetup/config/shared/profile.zsh" should include "${REMOTE_UPDATE_MARKER}"
 End
 
 It 'pulls while preserving uncommitted local changes'
@@ -67,7 +71,7 @@ printf '\n# local update\n' >>"${HOME}/.rn-forge/macsetup/config/hosts/testhost/
 When run script "${HOME}/.rn-forge/bin/rnfmac" config pull
 The status should be success
 The output should include 'macsetup config is current'
-The contents of file "${HOME}/.rn-forge/macsetup/config/shared/profile.zsh" should include '# remote update'
+The contents of file "${HOME}/.rn-forge/macsetup/config/shared/profile.zsh" should include "${REMOTE_UPDATE_MARKER}"
 The contents of file "${HOME}/.rn-forge/macsetup/config/hosts/testhost/Brewfile" should include '# local update'
 End
 
@@ -85,15 +89,15 @@ The output should include 'macsetup config published'
 The contents of file "${HOME}/.rn-forge/macsetup/config/shared/profile.zsh" should include '# published update'
 End
 
-# the deadlock this pair used to hit: push refused a moved remote, pull refused a
-# dirty tree, so neither command could get the checkout out of that state.
+# guards against a deadlock: push refusing a moved remote and pull refusing a
+# dirty tree would otherwise leave neither command able to unstick the checkout.
 It 'pushes local changes onto a remote that moved on'
 push_remote_commit
 printf '\n# published update\n' >>"${HOME}/.rn-forge/macsetup/config/hosts/testhost/Brewfile"
 When run script "${HOME}/.rn-forge/bin/rnfmac" config push -m 'Publish test config'
 The status should be success
 The output should include 'macsetup config published'
-The contents of file "${HOME}/.rn-forge/macsetup/config/shared/profile.zsh" should include '# remote update'
+The contents of file "${HOME}/.rn-forge/macsetup/config/shared/profile.zsh" should include "${REMOTE_UPDATE_MARKER}"
 The contents of file "${HOME}/.rn-forge/macsetup/config/hosts/testhost/Brewfile" should include '# published update'
 End
 

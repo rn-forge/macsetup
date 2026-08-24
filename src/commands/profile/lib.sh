@@ -34,4 +34,5 @@ function render_profile_content() {
   echo ""
   echo "#################### host overrides: ${HOST_NAME}"
   cat "${host_profile}"
+  return $?
 }

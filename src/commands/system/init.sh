@@ -60,7 +60,7 @@ function parse_args() {
 #   prefix (Apple Silicon vs Intel).
 # @noargs
 function activate_homebrew() {
-  if [ "$(uname -m)" = "arm64" ]; then
+  if [[ "$(uname -m)" = "arm64" ]]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
   else
     eval "$(/usr/local/bin/brew shellenv zsh)"
@@ -95,8 +95,8 @@ function setup_homebrew() {
 
   activate_homebrew
 
-  if [ -f /opt/homebrew/bin/brew ]; then
-    if [ "${FORCE_FLAG}" -eq 0 ]; then
+  if [[ -f /opt/homebrew/bin/brew ]]; then
+    if [[ "${FORCE_FLAG}" -eq 0 ]]; then
       log_warning "\`$(brew --version)\` available, skipping ..."
       return
     fi
@@ -107,7 +107,7 @@ function setup_homebrew() {
   fi
 
   ## install homebrew - https://brew.sh
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  /bin/bash -c "$(curl -fsSL --proto '=https' --tlsv1.2 https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   activate_homebrew
 
   log_success "\`$(brew --version)\` setup complete ..."
@@ -119,8 +119,8 @@ function setup_homebrew() {
 function setup_ohmyzsh() {
   log_info "Setting up ohmyzsh ..."
 
-  if [ -d "${HOME}/.oh-my-zsh" ]; then
-    if [ "${FORCE_FLAG}" -eq 0 ]; then
+  if [[ -d "${HOME}/.oh-my-zsh" ]]; then
+    if [[ "${FORCE_FLAG}" -eq 0 ]]; then
       log_warning "oh-my-zsh available, skipping ..."
       source "${HOME}"/.zshrc || true # handle return 3 from oh-my-zsh.sh
       return
@@ -133,7 +133,7 @@ function setup_ohmyzsh() {
   fi
 
   ## install ohmyzsh - https://ohmyz.sh/#install
-  sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+  sh -c "$(curl -fsSL --proto '=https' --tlsv1.2 https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
   source "${HOME}/.zshrc" || true # handle return 3 from oh-my-zsh.sh
   git clone https://github.com/zsh-users/zsh-completions.git "${ZSH_CUSTOM}/plugins/zsh-completions"
   git clone https://github.com/zsh-users/zsh-autosuggestions "${ZSH_CUSTOM}/plugins/zsh-autosuggestions"
@@ -148,8 +148,8 @@ function setup_ohmyzsh() {
 function setup_uv() {
   log_info "Setting up uv ..."
 
-  if [ -f "${HOMEBREW_PREFIX}/bin/uv" ]; then
-    if [ "${FORCE_FLAG}" -eq 0 ]; then
+  if [[ -f "${HOMEBREW_PREFIX}/bin/uv" ]]; then
+    if [[ "${FORCE_FLAG}" -eq 0 ]]; then
       log_warning "\`$(uv --version)\` available, skipping ..."
       return
     fi
@@ -171,8 +171,8 @@ function setup_nvm() {
   log_info "Setting up nvm ..."
 
   export NVM_DIR="${HOME}/.nvm"
-  if [ -d "${NVM_DIR}" ]; then
-    if [ "${FORCE_FLAG}" -eq 0 ]; then
+  if [[ -d "${NVM_DIR}" ]]; then
+    if [[ "${FORCE_FLAG}" -eq 0 ]]; then
       source "${NVM_DIR}/nvm.sh"
       log_warning "\`nvm $(nvm --version)\` available, skipping ..."
       return
@@ -198,8 +198,8 @@ function setup_sdkman() {
 
   export SDKMAN_DIR="${HOME}/.sdkman"
 
-  if [ -f "${SDKMAN_DIR}/bin/sdkman-init.sh" ]; then
-    if [ "${FORCE_FLAG}" -eq 0 ]; then
+  if [[ -f "${SDKMAN_DIR}/bin/sdkman-init.sh" ]]; then
+    if [[ "${FORCE_FLAG}" -eq 0 ]]; then
       source "${SDKMAN_DIR}/bin/sdkman-init.sh"
       log_warning "\`sdkman ($(sdk version | sed -n '3p;4p;d' | awk '{print $1,$2}' | tr '\n' ';'))\` already installed, skipping ..."
       return

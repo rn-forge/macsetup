@@ -22,7 +22,8 @@ PROBLEMS=0
 # @arg $1 string The warning message.
 # @set PROBLEMS Set to 1.
 function report_problem() {
-  log_warning "$1"
+  local message="$1"
+  log_warning "${message}"
   PROBLEMS=1
 }
 
@@ -42,7 +43,7 @@ function check_homebrew() {
 
   local plugin
   for plugin in zsh-completions zsh-autosuggestions zsh-syntax-highlighting; do
-    if [ -d "${ZSH_CUSTOM:-${HOME}/.oh-my-zsh/custom}/plugins/${plugin}" ]; then
+    if [[ -d "${ZSH_CUSTOM:-${HOME}/.oh-my-zsh/custom}/plugins/${plugin}" ]]; then
       log_success "oh-my-zsh plugin '${plugin}' present"
     else
       report_problem "oh-my-zsh plugin '${plugin}' missing — run 'rnfmac system init'"
@@ -53,7 +54,7 @@ function check_homebrew() {
 # @description Check oh-my-zsh is installed.
 # @noargs
 function check_ohmyzsh() {
-  if [ -d "${HOME}/.oh-my-zsh" ]; then
+  if [[ -d "${HOME}/.oh-my-zsh" ]]; then
     log_success "oh-my-zsh present"
   else
     report_problem "oh-my-zsh not found — run 'rnfmac system init'"
@@ -69,13 +70,13 @@ function check_runtime_managers() {
     report_problem "uv not found — run 'rnfmac system init'"
   fi
 
-  if [ -d "${HOME}/.nvm" ]; then
+  if [[ -d "${HOME}/.nvm" ]]; then
     log_success "nvm present"
   else
     report_problem "nvm not found — run 'rnfmac system init'"
   fi
 
-  if [ -f "${HOME}/.sdkman/bin/sdkman-init.sh" ]; then
+  if [[ -f "${HOME}/.sdkman/bin/sdkman-init.sh" ]]; then
     log_success "sdkman present"
   else
     report_problem "sdkman not found — run 'rnfmac system init'"
@@ -88,25 +89,25 @@ function check_runtime_managers() {
 function check_rn_forge_layout() {
   local product_home="${RNF_HOME}/macsetup"
 
-  if [ -L "${product_home}/current" ] && [ -e "${product_home}/current" ]; then
+  if [[ -L "${product_home}/current" ]] && [[ -e "${product_home}/current" ]]; then
     log_success "macsetup current -> $(readlink "${product_home}/current")"
   else
     report_problem "macsetup 'current' symlink missing or broken — run 'rnfmac profile sync'"
   fi
 
-  if [ -L "${RNF_HOME}/bin/rnfmac" ] && [ -e "${RNF_HOME}/bin/rnfmac" ]; then
+  if [[ -L "${RNF_HOME}/bin/rnfmac" ]] && [[ -e "${RNF_HOME}/bin/rnfmac" ]]; then
     log_success "bin/rnfmac linked"
   else
     report_problem "bin/rnfmac missing or broken — run 'rnfmac profile sync'"
   fi
 
-  if [ -L "${RNF_HOME}/completions/_rnfmac" ] && [ -e "${RNF_HOME}/completions/_rnfmac" ]; then
+  if [[ -L "${RNF_HOME}/completions/_rnfmac" ]] && [[ -e "${RNF_HOME}/completions/_rnfmac" ]]; then
     log_success "completions/_rnfmac linked"
   else
     report_problem "completions/_rnfmac missing or broken — run 'rnfmac profile sync'"
   fi
 
-  if [ -f "${RNF_HOME}/shkit/current/shkit.sh" ]; then
+  if [[ -f "${RNF_HOME}/shkit/current/shkit.sh" ]]; then
     log_success "shkit installed and sourceable"
   else
     report_problem "shkit not found at ${RNF_HOME}/shkit/current — reinstall macsetup"
@@ -123,7 +124,7 @@ function check_relay_state() {
   fi
   local homebrew_prefix
   homebrew_prefix="$(brew --prefix 2>/dev/null)"
-  if [ -z "${homebrew_prefix}" ] || ! git -C "${homebrew_prefix}" rev-parse --show-toplevel >/dev/null 2>&1; then
+  if [[ -z "${homebrew_prefix}" ]] || ! git -C "${homebrew_prefix}" rev-parse --show-toplevel >/dev/null 2>&1; then
     return
   fi
 
@@ -148,7 +149,7 @@ function execute() {
 ${__SOURCED__:+return} # shellspec Include guard
 
 execute
-if [ "${PROBLEMS}" -eq 0 ]; then
+if [[ "${PROBLEMS}" -eq 0 ]]; then
   log_success "system doctor passed"
 fi
 exit "${PROBLEMS}"

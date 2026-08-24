@@ -52,10 +52,12 @@ setup_sandbox() {
   export PATH="${FIXTURES}/stubs:${PATH}"
   # safety net: integration runs must never reach brew/uv/nvm/sdkman
   export RNFMAC_SYNC_PROFILES_ONLY=1
+  return 0
 }
 
 cleanup_sandbox() {
   rm -rf "${SANDBOX}"
+  return 0
 }
 
 # installs the fixture checkout into RNF_HOME the way a real machine would — via
@@ -65,16 +67,19 @@ install_dist_from_checkout() {
   "${CHECKOUT}/src/install.sh" >/dev/null 2>&1
   git -C "${HOME}/.rn-forge/macsetup/config" config user.name 'ShellSpec'
   git -C "${HOME}/.rn-forge/macsetup/config" config user.email 'shellspec@example.invalid'
+  return 0
 }
 
 run_sync_from_checkout() {
   install_dist_from_checkout
   "${CHECKOUT}/src/commands/sync.sh"
+  return 0
 }
 
 run_profile_sync_from_checkout() {
   install_dist_from_checkout
   "${CHECKOUT}/src/commands/profile/sync.sh"
+  return 0
 }
 
 # write a driver script that sources the given command script (Include guard active) and
@@ -91,6 +96,7 @@ write_unit_driver() {
     printf '%s\n' "$@"
   } >"${DRIVER}"
   chmod +x "${DRIVER}"
+  return 0
 }
 
 # stage a fake GitHub release tarball (default version 9.9.9) served by the curl
@@ -104,4 +110,5 @@ build_release_tarball() {
   echo "${version}" >"${stage}/VERSION"
   export RNF_TEST_RELEASE_TARBALL="${SANDBOX}/macsetup.tar.gz"
   tar -czf "${RNF_TEST_RELEASE_TARBALL}" -C "${stage}" .
+  return 0
 }
