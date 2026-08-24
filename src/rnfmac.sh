@@ -87,6 +87,14 @@ fi
 SUB_COMMAND="$1"
 GROUP_DIR="${COMMANDS_PATH}/${SUB_COMMAND//-/_}"
 
+## the reserved name is rejected explicitly rather than left to the executable-bit
+## check below — a lib.sh that ever gained +x would otherwise become dispatchable
+if is_lib_name "${SUB_COMMAND//-/_}"; then
+  echo "rnfmac: unknown sub-command '${SUB_COMMAND}'" >&2
+  usage >&2
+  exit 1
+fi
+
 if [ -d "${GROUP_DIR}" ]; then
   shift
   if [ $# -eq 0 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "help" ]; then
@@ -97,7 +105,7 @@ if [ -d "${GROUP_DIR}" ]; then
   GROUP_SUB_COMMAND="$1"
   shift
   SUB_COMMAND_SCRIPT="${GROUP_DIR}/${GROUP_SUB_COMMAND//-/_}.sh"
-  if [ ! -x "${SUB_COMMAND_SCRIPT}" ]; then
+  if is_lib_name "${GROUP_SUB_COMMAND//-/_}" || [ ! -x "${SUB_COMMAND_SCRIPT}" ]; then
     echo "rnfmac: unknown sub-command '${SUB_COMMAND} ${GROUP_SUB_COMMAND}'" >&2
     group_usage "${SUB_COMMAND//-/_}" >&2
     exit 1

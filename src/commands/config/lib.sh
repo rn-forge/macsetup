@@ -42,13 +42,49 @@ function require_config_checkout() {
   fi
 }
 
-# @description Fail when the config checkout contains tracked or untracked changes.
+# @description Fast-forward the config checkout onto `origin/<branch>`, carrying any
+#   uncommitted local changes across the update on a stash. Local edits and a moved
+#   remote are the normal case here, not an error — the checkout is a working copy that
+#   `sync`/`upgrade` update behind the user's back, so refusing either side would
+#   deadlock `pull` (wants a clean tree) against `push` (wants an up-to-date HEAD).
+#   Only genuine divergence — local commits absent from the remote — is refused.
 # @noargs
-# @exitcode 0 The checkout is clean.
-# @exitcode 1 Local changes are present.
-function require_clean_config() {
+# @exitcode 0 The checkout is at `origin/<branch>` with local changes intact.
+# @exitcode 1 The checkout diverged, could not fast-forward, or the stash conflicted.
+function update_config_checkout() {
+  git -C "${CONFIG_HOME}" fetch --quiet origin "${CONFIG_BRANCH}"
+
+  local local_head remote_head
+  local_head="$(git -C "${CONFIG_HOME}" rev-parse HEAD)"
+  remote_head="$(git -C "${CONFIG_HOME}" rev-parse "origin/${CONFIG_BRANCH}")"
+  if [ "${local_head}" = "${remote_head}" ]; then
+    return 0
+  fi
+
+  if ! git -C "${CONFIG_HOME}" merge-base --is-ancestor HEAD "origin/${CONFIG_BRANCH}"; then
+    log_error "macsetup config has local commits that are not on origin/${CONFIG_BRANCH} — reconcile ${CONFIG_HOME} by hand"
+    return 1
+  fi
+
+  local stashed=0
   if [ -n "$(git -C "${CONFIG_HOME}" status --porcelain)" ]; then
-    log_error "macsetup config has local changes — publish or discard them before pulling"
+    log_info "holding local config changes aside while updating ..."
+    git -C "${CONFIG_HOME}" stash push --quiet --include-untracked --message "rnfmac config update" || return 1
+    stashed=1
+  fi
+
+  if ! git -C "${CONFIG_HOME}" merge --quiet --ff-only "origin/${CONFIG_BRANCH}"; then
+    log_error "could not fast-forward macsetup config to origin/${CONFIG_BRANCH}"
+    if [ "${stashed}" -eq 1 ]; then
+      git -C "${CONFIG_HOME}" stash pop --quiet
+    fi
+    return 1
+  fi
+
+  log_info "updated macsetup config to $(git -C "${CONFIG_HOME}" rev-parse --short HEAD)"
+
+  if [ "${stashed}" -eq 1 ] && ! git -C "${CONFIG_HOME}" stash pop --quiet; then
+    log_error "local config changes conflict with origin/${CONFIG_BRANCH} — resolve the conflicts in ${CONFIG_HOME}, then run 'rnfmac config push -m <message>'"
     return 1
   fi
 }

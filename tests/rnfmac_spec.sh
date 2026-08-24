@@ -64,4 +64,19 @@ The status should equal 1
 The stderr should include "unknown sub-command 'system bogus'"
 The stderr should include 'usage: rnfmac system <sub-command>'
 End
+
+It 'never dispatches to the reserved "lib" name, even when the helper is executable'
+chmod +x "${CHECKOUT}/src/commands/config/lib.sh"
+When run script "${CHECKOUT}/src/rnfmac.sh" config lib
+The status should be failure
+The error should include "unknown sub-command 'config lib'"
+End
+
+It 'never offers "lib" as a group sub-command'
+When run script "${CHECKOUT}/src/rnfmac.sh" config --help
+The status should be success
+The output should include 'pull'
+The output should not include 'lib'
+End
+
 End

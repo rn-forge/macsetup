@@ -100,8 +100,9 @@ install.
 ### _rnf_install_config_checkout
 
 Clone the persistent macsetup-config checkout on first install, or
-fast-forward an existing clean checkout. The checkout lives beside versioned
-application directories so future upgrades never replace it.
+fast-forward an existing checkout, carrying any uncommitted local changes across
+on a stash. The checkout lives beside versioned application directories so future
+upgrades never replace it.
 
 #### Arguments
 

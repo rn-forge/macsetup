@@ -127,8 +127,9 @@ function _rnf_atomic_install() {
 }
 
 # @description Clone the persistent macsetup-config checkout on first install, or
-#   fast-forward an existing clean checkout. The checkout lives beside versioned
-#   application directories so future upgrades never replace it.
+#   fast-forward an existing checkout, carrying any uncommitted local changes across
+#   on a stash. The checkout lives beside versioned application directories so future
+#   upgrades never replace it.
 # @arg $1 string Product home directory.
 # @exitcode 0 Configuration checkout is current.
 # @exitcode 1 Git is unavailable, or clone/pull validation failed.
@@ -147,11 +148,24 @@ function _rnf_install_config_checkout() {
       log_error "existing config path is not a git checkout: ${config_home}"
       return 1
     fi
+    ## uncommitted config edits are the normal state of a working checkout — hold
+    ## them aside for the fast-forward rather than making an install refuse to run
+    local stashed=0
     if [ -n "$(git -C "${config_home}" status --porcelain)" ]; then
-      log_error "macsetup config has local changes — publish or discard them before updating"
+      log_info "holding local config changes aside while updating ..."
+      git -C "${config_home}" stash push --quiet --include-untracked --message "rnfmac install" || return 1
+      stashed=1
+    fi
+    if ! git -C "${config_home}" pull --quiet --ff-only origin main; then
+      if [ "${stashed}" -eq 1 ]; then
+        git -C "${config_home}" stash pop --quiet
+      fi
       return 1
     fi
-    git -C "${config_home}" pull --quiet --ff-only origin main || return 1
+    if [ "${stashed}" -eq 1 ] && ! git -C "${config_home}" stash pop --quiet; then
+      log_error "local config changes conflict with origin/main — resolve the conflicts in ${config_home}"
+      return 1
+    fi
   fi
   log_success "macsetup config is current ($(git -C "${config_home}" rev-parse --short HEAD))"
 }

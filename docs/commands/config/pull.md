@@ -4,9 +4,10 @@
 
 ## Overview
 
-Clones the persistent macsetup-config checkout when absent, otherwise updates
-it from origin/main. Refuses dirty or divergent checkouts; it never merges,
-rebases, or overwrites local changes.
+Clones the persistent macsetup-config checkout when absent, otherwise
+fast-forwards it to origin/main. Uncommitted local changes are carried across
+the update rather than refused; it never merges, rebases, or overwrites them.
+Refuses only a divergent checkout (local commits absent from origin).
 Version: 1.0
 Author: Rohit Narayanan
 
@@ -16,13 +17,13 @@ Author: Rohit Narayanan
 
 ### execute
 
-Ensure the checkout exists, then pull `origin/main` with
-fast-forward-only semantics.
+Ensure the checkout exists, then fast-forward it onto `origin/main`,
+preserving any uncommitted local changes.
 
 _Function has no arguments._
 
 #### Exit codes
 
 * **0**: Configuration is current.
-* **1**: Checkout validation or pull failed.
+* **1**: Checkout validation or update failed.
 

@@ -7,11 +7,16 @@
 
 local commands_path="${RNF_HOME:-${HOME}/.rn-forge}/macsetup/current/commands"
 
+# "lib" is reserved for shared helper code in every position, mirroring is_lib_name()
+# in rnfmac.sh — a commands/lib.sh, a commands/lib/ group, or a commands/<group>/lib.sh
+# is sourced by real sub-commands, never dispatched to, so it is never offered here.
+
 if (( CURRENT == 2 )); then
   local -a subcommands
   local script name dir
   for script in "${commands_path}"/*.sh(N); do
     name="${script:t:r}"
+    [[ "${name}" == "lib" ]] && continue
     subcommands+=("${name//_/-}")
   done
   for dir in "${commands_path}"/*(N/); do
@@ -31,6 +36,7 @@ if (( CURRENT == 3 )); then
     local script name
     for script in "${group_path}"/*.sh(N); do
       name="${script:t:r}"
+      [[ "${name}" == "lib" ]] && continue
       group_subcommands+=("${name//_/-}")
     done
     _describe 'rnfmac group sub-command' group_subcommands

@@ -4,7 +4,9 @@
 # @brief `rnfmac config push` — commit and publish configuration changes.
 # @description
 #   Publishes local macsetup-config changes directly to the linear main branch.
-#   Requires an explicit commit message and refuses to merge, rebase, or force-push.
+#   Fast-forwards onto origin/main first (carrying the local changes across) so a
+#   remote that moved on is not a reason to fail. Requires an explicit commit
+#   message and refuses to merge, rebase, or force-push.
 # Version: 1.0
 # Author: Rohit Narayanan
 
@@ -29,9 +31,10 @@ function parse_args() {
   MESSAGE="$2"
 }
 
-# @description Commit all config checkout changes and push them to origin/main.
+# @description Fast-forward onto origin/main, then commit all config checkout
+#   changes and push them.
 # @noargs
-# @exitcode 1 No changes exist, or local main is not equal to origin/main.
+# @exitcode 1 No changes exist, or the checkout could not be brought up to date.
 function execute() {
   require_config_checkout
 
@@ -40,14 +43,7 @@ function execute() {
     return 1
   fi
 
-  git -C "${CONFIG_HOME}" fetch --quiet origin "${CONFIG_BRANCH}"
-  local local_head remote_head
-  local_head="$(git -C "${CONFIG_HOME}" rev-parse HEAD)"
-  remote_head="$(git -C "${CONFIG_HOME}" rev-parse "origin/${CONFIG_BRANCH}")"
-  if [ "${local_head}" != "${remote_head}" ]; then
-    log_error "local config is not current with origin/${CONFIG_BRANCH} — reconcile it before publishing"
-    return 1
-  fi
+  update_config_checkout
 
   git -C "${CONFIG_HOME}" add -A
   git -C "${CONFIG_HOME}" commit -m "${MESSAGE}"

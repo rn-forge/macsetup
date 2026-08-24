@@ -11,7 +11,7 @@ the external config checkout, otherwise validate the existing checkout.
 
 * [ensure_config_checkout](#ensure_config_checkout)
 * [require_config_checkout](#require_config_checkout)
-* [require_clean_config](#require_clean_config)
+* [update_config_checkout](#update_config_checkout)
 
 ### ensure_config_checkout
 
@@ -36,14 +36,19 @@ _Function has no arguments._
 * **0**: The checkout is valid and on the expected branch.
 * **1**: The checkout is missing, invalid, or on another branch.
 
-### require_clean_config
+### update_config_checkout
 
-Fail when the config checkout contains tracked or untracked changes.
+Fast-forward the config checkout onto `origin/<branch>`, carrying any
+uncommitted local changes across the update on a stash. Local edits and a moved
+remote are the normal case here, not an error — the checkout is a working copy that
+`sync`/`upgrade` update behind the user's back, so refusing either side would
+deadlock `pull` (wants a clean tree) against `push` (wants an up-to-date HEAD).
+Only genuine divergence — local commits absent from the remote — is refused.
 
 _Function has no arguments._
 
 #### Exit codes
 
-* **0**: The checkout is clean.
-* **1**: Local changes are present.
+* **0**: The checkout is at `origin/<branch>` with local changes intact.
+* **1**: The checkout diverged, could not fast-forward, or the stash conflicted.
 
