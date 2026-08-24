@@ -16,4 +16,15 @@ The output should include 'loading macsetup profile'
 The output should include 'skipping brew and system sync'
 The path "${HOME}/.rn-forge/macsetup/current" should be symlink
 End
+
+It 'clones but does not apply config for a pre-config upgrade migration'
+install_dist_from_checkout
+rm -rf "${HOME}/.rn-forge/macsetup/config"
+When run script "${CHECKOUT}/src/commands/sync.sh"
+The status should be success
+The output should include 'configuration checkout created but not applied'
+The output should not include 'Profile synced successfully'
+The path "${HOME}/.rn-forge/macsetup/config/.git" should be directory
+The path "${HOME}/.rn-forge/macsetup/profile.zsh" should not be exist
+End
 End

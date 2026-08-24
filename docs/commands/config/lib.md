@@ -4,12 +4,26 @@ Shared helpers for the `config` command group. Not dispatchable.
 
 ## Overview
 
-Verify that the macsetup-config checkout exists and is on `main`.
+Clone macsetup-config when upgrading an installation that predates
+the external config checkout, otherwise validate the existing checkout.
 
 ## Index
 
+* [ensure_config_checkout](#ensure_config_checkout)
 * [require_config_checkout](#require_config_checkout)
 * [require_clean_config](#require_clean_config)
+
+### ensure_config_checkout
+
+Clone macsetup-config when upgrading an installation that predates
+the external config checkout, otherwise validate the existing checkout.
+
+_Function has no arguments._
+
+#### Exit codes
+
+* **0**: The checkout exists and is on the expected branch.
+* **1**: Clone or checkout validation failed.
 
 ### require_config_checkout
 

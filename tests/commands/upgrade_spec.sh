@@ -33,6 +33,17 @@ The output should include 'macsetup config is current'
 The contents of file "${HOME}/.rn-forge/macsetup/current/VERSION" should include "${CHECKOUT_VERSION}"
 End
 
+It 'clones config when upgrading an installation that predates the config checkout'
+rm -rf "${HOME}/.rn-forge/macsetup/config"
+build_release_tarball "9.9.9"
+When run script "${HOME}/.rn-forge/macsetup/current/commands/upgrade.sh"
+The status should be success
+The output should include 'cloning macsetup config'
+The output should include 'configuration updated but not applied'
+The path "${HOME}/.rn-forge/macsetup/config/.git" should be directory
+The path "${HOME}/.rn-forge/macsetup/config/hosts/testhost/Brewfile" should be file
+End
+
 It 'fails when the downloaded tarball checksum does not match its sidecar'
 build_release_tarball "9.9.9"
 export RNF_TEST_CORRUPT_CHECKSUM=1

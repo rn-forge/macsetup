@@ -67,7 +67,7 @@ rnfmac system doctor    # read-only toolchain health check (Homebrew, oh-my-zsh,
 rnfmac profile check    # does the installed profile match what sync would render?
 rnfmac brew diff        # drift between installed packages and the Brewfile (--write to update it)
 rnfmac config status    # show config branch, revision, and local changes
-rnfmac config pull      # fast-forward a clean config checkout from origin/main
+rnfmac config pull      # clone config if absent, otherwise fast-forward origin/main
 rnfmac config push -m "Update host config" # commit and publish config changes
 rnfmac brew relay       # (re)apply the Homebrew Remote Relay patches
 rnfmac --help           # list all sub-commands and groups

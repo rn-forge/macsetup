@@ -9,6 +9,20 @@ RNF_HOME="${HOME}/.rn-forge"
 PRODUCT_HOME="${RNF_HOME}/macsetup"
 CONFIG_HOME="${PRODUCT_HOME}/config"
 CONFIG_BRANCH="main"
+CONFIG_REPO_URL="${RNFMAC_CONFIG_REPO_URL:-https://github.com/${RNF_GITHUB_ORG:-rn-forge}/macsetup-config.git}"
+
+# @description Clone macsetup-config when upgrading an installation that predates
+#   the external config checkout, otherwise validate the existing checkout.
+# @noargs
+# @exitcode 0 The checkout exists and is on the expected branch.
+# @exitcode 1 Clone or checkout validation failed.
+function ensure_config_checkout() {
+  if [ ! -e "${CONFIG_HOME}" ]; then
+    log_info "cloning macsetup config from ${CONFIG_REPO_URL} ..."
+    git clone --quiet --branch "${CONFIG_BRANCH}" --single-branch "${CONFIG_REPO_URL}" "${CONFIG_HOME}"
+  fi
+  require_config_checkout
+}
 
 # @description Verify that the macsetup-config checkout exists and is on `main`.
 # @noargs
@@ -16,7 +30,7 @@ CONFIG_BRANCH="main"
 # @exitcode 1 The checkout is missing, invalid, or on another branch.
 function require_config_checkout() {
   if ! git -C "${CONFIG_HOME}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    log_error "macsetup config checkout is missing or invalid at ${CONFIG_HOME} — reinstall macsetup"
+    log_error "macsetup config checkout is invalid at ${CONFIG_HOME}"
     return 1
   fi
 

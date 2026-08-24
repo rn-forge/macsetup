@@ -10,7 +10,7 @@
     },
     {
       "name": "homebrew",
-      "path": "../../../../../../opt/homebrew"
+      "path": "/opt/homebrew"
     }
   ],
   "settings": {}

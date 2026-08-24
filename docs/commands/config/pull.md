@@ -4,8 +4,9 @@
 
 ## Overview
 
-Updates the persistent macsetup-config checkout from origin/main. Refuses dirty
-or divergent checkouts; it never merges, rebases, or overwrites local changes.
+Clones the persistent macsetup-config checkout when absent, otherwise updates
+it from origin/main. Refuses dirty or divergent checkouts; it never merges,
+rebases, or overwrites local changes.
 Version: 1.0
 Author: Rohit Narayanan
 
@@ -15,7 +16,8 @@ Author: Rohit Narayanan
 
 ### execute
 
-Pull `origin/main` with fast-forward-only semantics.
+Ensure the checkout exists, then pull `origin/main` with
+fast-forward-only semantics.
 
 _Function has no arguments._
 
