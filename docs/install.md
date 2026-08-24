@@ -12,6 +12,9 @@ In-path (an unpacked release dist, or this repo's src/, sits next to this file)
 — installs straight from that tree, no network round-trip for macsetup itself
 (shkit below is still fetched fresh either way):
 . src/install.sh
+Archive (a release tarball already on disk) — unpacks and installs it, no
+download; takes precedence over in-path detection:
+. ./install.sh --archive ~/Downloads/macsetup.tar.gz
 shkit is still fetched via curl even in in-path mode; if that curl is
 blocked (e.g. a corporate proxy), set RNF_SHKIT_INSTALL_BUNDLE to the path of a
 shkit release tarball fetched out-of-band — it's extracted and its
@@ -27,10 +30,12 @@ Author: Rohit Narayanan
 ## Index
 
 * [_rnf_sha256_of](#_rnf_sha256_of)
+* [_rnf_verify_checksum](#_rnf_verify_checksum)
 * [_rnf_read_dist_version](#_rnf_read_dist_version)
 * [_rnf_acquire_install_lock](#_rnf_acquire_install_lock)
 * [_rnf_atomic_install](#_rnf_atomic_install)
 * [_rnf_install_config_checkout](#_rnf_install_config_checkout)
+* [_rnf_parse_install_args](#_rnf_parse_install_args)
 * [rnfmac_install](#rnfmac_install)
 
 ### _rnf_sha256_of
@@ -44,6 +49,20 @@ Print the sha256 of a file — sha256sum on Linux, shasum on macOS.
 #### Output on stdout
 
 * The hex-encoded sha256 digest.
+
+### _rnf_verify_checksum
+
+Compare a file against a sha256 sidecar.
+
+#### Arguments
+
+* **$1** (string): Path to the file to verify.
+* **$2** (string): Path to the sidecar holding the expected digest.
+
+#### Exit codes
+
+* **0**: The digests match.
+* **1**: The digests differ.
 
 ### _rnf_read_dist_version
 
@@ -113,20 +132,42 @@ upgrades never replace it.
 * **0**: Configuration checkout is current.
 * **1**: Git is unavailable, or clone/pull validation failed.
 
+### _rnf_parse_install_args
+
+Parse installer arguments, setting `_RNF_ARCHIVE` from
+`--archive <path>`. Returns rather than exits: this file is sourced, so a bad
+argument must never kill the caller's shell.
+
+#### Arguments
+
+* **...** (string): Installer arguments.
+
+#### Variables set
+
+* **_RNF_ARCHIVE** (Path): to a release tarball to install from.
+
+#### Exit codes
+
+* **0**: Parsed successfully.
+* **1**: Unrecognized or incomplete arguments.
+
 ### rnfmac_install
 
 Install macsetup into `~/.rn-forge/macsetup/<version>/`, install or
-update macsetup-config, and link `rnfmac` + its completion script. Streaming
-mode (no sibling dist next to this
-script) downloads and verifies the latest release tarball; in-path mode (an
+update macsetup-config, and link `rnfmac` + its completion script. Three modes:
+`--archive <path>` unpacks a release tarball already on disk; in-path mode (an
 unpacked dist or this repo's checkout sits alongside install.sh) installs
-straight from that tree. No-ops if `current` already matches the target version.
-Does not touch .zprofile/.zshrc or run bootstrap/sync — see next-step output.
+straight from that tree; streaming mode (neither of those) downloads and
+verifies the latest release tarball. No-ops if `current` already matches the
+target version. Does not touch .zprofile/.zshrc or run bootstrap/sync — see
+next-step output.
 
-_Function has no arguments._
+#### Arguments
+
+* **...** (string): Installer arguments — optionally `--archive <path>`.
 
 #### Exit codes
 
 * **0**: Installed (or already up to date).
-* **1**: shkit failed to load, or an install step failed.
+* **1**: shkit failed to load, bad arguments, or an install step failed.
 

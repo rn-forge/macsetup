@@ -94,6 +94,62 @@ The contents of file "${HOME}/.rn-forge/macsetup/current/VERSION" should include
 The path "${HOME}/.rn-forge/macsetup/config/hosts/testhost/Brewfile" should be file
 End
 
+It 'installs in-path from an unpacked release archive'
+# a release tarball unpacks with VERSION *beside* install.sh, unlike a checkout
+# where it sits one level up — this covers the other in-path detection branch
+build_release_tarball 8.8.8
+UNPACKED="${SANDBOX}/unpacked"
+mkdir -p "${UNPACKED}"
+tar -xzf "${RNF_TEST_RELEASE_TARBALL}" -C "${UNPACKED}"
+When run script "${UNPACKED}/install.sh"
+The status should be success
+The output should not include 'downloading latest release'
+The output should include 'distribution installed (current -> v8.8.8)'
+The contents of file "${HOME}/.rn-forge/macsetup/current/VERSION" should include '8.8.8'
+End
+
+It 'installs from an archive given with --archive'
+build_release_tarball 6.6.6
+ARCHIVE="${SANDBOX}/handoff.tar.gz"
+cp "${RNF_TEST_RELEASE_TARBALL}" "${ARCHIVE}"
+# --archive must win over the in-path dist sitting next to this install.sh
+When run script "${CHECKOUT}/src/install.sh" --archive "${ARCHIVE}"
+The status should be success
+The output should include 'installing macsetup from'
+The output should not include 'downloading latest release'
+The output should include 'distribution installed (current -> v6.6.6)'
+The contents of file "${HOME}/.rn-forge/macsetup/current/VERSION" should include '6.6.6'
+End
+
+It 'verifies an --archive tarball against its sidecar'
+build_release_tarball 6.6.6
+ARCHIVE="${SANDBOX}/handoff.tar.gz"
+cp "${RNF_TEST_RELEASE_TARBALL}" "${ARCHIVE}"
+echo "0000000000000000000000000000000000000000000000000000000000000000  handoff.tar.gz" >"${ARCHIVE}.sha256"
+export ARCHIVE CHECKOUT_INSTALL_SH="${CHECKOUT}/src/install.sh"
+When run zsh -c '. "${CHECKOUT_INSTALL_SH}" --archive "${ARCHIVE}"; echo "shell-alive rc=$?"'
+The status should be success
+The output should include 'shell-alive rc=1'
+The error should include 'checksum mismatch'
+The path "${HOME}/.rn-forge/macsetup/v6.6.6" should not be exist
+End
+
+It 'does not kill the sourcing shell when the --archive path is missing'
+export CHECKOUT_INSTALL_SH="${CHECKOUT}/src/install.sh"
+When run zsh -c '. "${CHECKOUT_INSTALL_SH}" --archive /nonexistent/macsetup.tar.gz; echo "shell-alive rc=$?"'
+The status should be success
+The output should include 'shell-alive rc=1'
+The error should include 'archive not found'
+End
+
+It 'does not kill the sourcing shell on a bad installer argument'
+export CHECKOUT_INSTALL_SH="${CHECKOUT}/src/install.sh"
+When run zsh -c '. "${CHECKOUT_INSTALL_SH}" --bogus; echo "shell-alive rc=$?"'
+The status should be success
+The output should include 'shell-alive rc=1'
+The error should include 'usage: . install.sh [--archive <path>]'
+End
+
 It 'in-path re-run from the already-installed dist is idempotent'
 "${CHECKOUT}/src/install.sh" >/dev/null 2>&1
 When run script "${HOME}/.rn-forge/macsetup/current/install.sh"

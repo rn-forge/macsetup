@@ -16,7 +16,7 @@ It 'downloads the latest release, installs it, and flips current'
 build_release_tarball "9.9.9" # stage v9.9.9 for the curl stub
 When run script "${HOME}/.rn-forge/macsetup/current/commands/upgrade.sh"
 The status should be success
-The output should include "Upgrading v${CHECKOUT_VERSION} -> v9.9.9"
+The output should include "Installing v9.9.9 (current: v${CHECKOUT_VERSION})"
 The output should include 'configuration updated but not applied'
 The output should not include 'Profile synced successfully'
 The path "${HOME}/.rn-forge/macsetup/v9.9.9" should be directory
@@ -28,7 +28,7 @@ It 'no-ops when already on the latest release'
 build_release_tarball "${CHECKOUT_VERSION}" # stage the same version already installed
 When run script "${HOME}/.rn-forge/macsetup/current/commands/upgrade.sh"
 The status should be success
-The output should include "already on the latest release (v${CHECKOUT_VERSION})"
+The output should include "already on v${CHECKOUT_VERSION}"
 The output should include 'macsetup config is current'
 The contents of file "${HOME}/.rn-forge/macsetup/current/VERSION" should include "${CHECKOUT_VERSION}"
 End
@@ -52,5 +52,59 @@ The status should be failure
 The output should include 'Downloading latest release'
 The error should include 'checksum mismatch'
 The path "${HOME}/.rn-forge/macsetup/v9.9.9" should not be exist
+End
+
+It 'installs from a local archive without downloading'
+build_release_tarball "7.7.7"
+ARCHIVE="${SANDBOX}/handoff.tar.gz"
+cp "${RNF_TEST_RELEASE_TARBALL}" "${ARCHIVE}"
+export RNF_TEST_RELEASE_TARBALL="/nonexistent/macsetup.tar.gz" # any download would now fail
+When run script "${HOME}/.rn-forge/macsetup/current/commands/upgrade.sh" --archive "${ARCHIVE}"
+The status should be success
+The output should include 'Installing from local archive'
+The output should not include 'Downloading latest release'
+The output should include 'unpacked and installed v7.7.7'
+The contents of file "${HOME}/.rn-forge/macsetup/current/VERSION" should include '7.7.7'
+End
+
+It 'verifies a local archive against its sidecar and refuses a corrupt one'
+build_release_tarball "7.7.7"
+ARCHIVE="${SANDBOX}/handoff.tar.gz"
+cp "${RNF_TEST_RELEASE_TARBALL}" "${ARCHIVE}"
+echo "0000000000000000000000000000000000000000000000000000000000000000  handoff.tar.gz" >"${ARCHIVE}.sha256"
+When run script "${HOME}/.rn-forge/macsetup/current/commands/upgrade.sh" --archive "${ARCHIVE}"
+The status should be failure
+The output should include 'Installing from local archive'
+The error should include 'checksum mismatch'
+The path "${HOME}/.rn-forge/macsetup/v7.7.7" should not be exist
+End
+
+It 'accepts a local archive whose sidecar matches'
+build_release_tarball "7.7.7"
+ARCHIVE="${SANDBOX}/handoff.tar.gz"
+cp "${RNF_TEST_RELEASE_TARBALL}" "${ARCHIVE}"
+shasum -a 256 "${ARCHIVE}" >"${ARCHIVE}.sha256"
+When run script "${HOME}/.rn-forge/macsetup/current/commands/upgrade.sh" --archive "${ARCHIVE}"
+The status should be success
+The output should not include 'skipping verification'
+The output should include 'unpacked and installed v7.7.7'
+End
+
+It 'fails cleanly when the archive path does not exist'
+When run script "${HOME}/.rn-forge/macsetup/current/commands/upgrade.sh" --archive /nonexistent/macsetup.tar.gz
+The status should be failure
+The error should include 'archive not found'
+End
+
+It 'rejects --archive with no path'
+When run script "${HOME}/.rn-forge/macsetup/current/commands/upgrade.sh" --archive
+The status should be failure
+The error should include 'usage: rnfmac upgrade [--archive <path>]'
+End
+
+It 'rejects an unknown flag'
+When run script "${HOME}/.rn-forge/macsetup/current/commands/upgrade.sh" --bogus
+The status should be failure
+The error should include 'usage: rnfmac upgrade'
 End
 End

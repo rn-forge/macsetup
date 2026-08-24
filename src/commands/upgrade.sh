@@ -5,7 +5,10 @@
 # @description
 #   Downloads and installs the latest macsetup release, then updates the persistent
 #   macsetup-config checkout without applying profile, brew, or system sync.
-# Version: 2.0
+#   `--archive <path>` installs a release tarball already on disk instead of
+#   downloading one — the offline/air-gapped route, and the way to move to a
+#   specific build rather than whatever "latest" currently points at.
+# Version: 3.0
 # Author: Rohit Narayanan
 
 set -eo pipefail
@@ -19,6 +22,41 @@ export RNF_LOG_LEVEL=${RNF_LOG_LEVEL_DEBUG}
 ## global variables
 GITHUB_REPO="${RNF_GITHUB_ORG:-rn-forge}/macsetup"
 PRODUCT_HOME="${RNF_HOME}/macsetup"
+ARCHIVE=""
+
+# @description Print `rnfmac upgrade` usage.
+# @noargs
+# @stdout The usage text.
+function usage() {
+  echo "usage: rnfmac upgrade [--archive <path>]"
+}
+
+# @description Parse CLI args, setting `ARCHIVE` and handling `-h`/`--help`.
+# @arg $@ string Command arguments.
+# @set ARCHIVE Path to a release tarball to install instead of downloading one.
+# @exitcode 1 Unrecognized or incomplete arguments.
+function parse_args() {
+  while [ $# -gt 0 ]; do
+    case "$1" in
+    --archive)
+      if [ -z "${2:-}" ]; then
+        usage >&2
+        exit 1
+      fi
+      ARCHIVE="$2"
+      shift 2
+      ;;
+    -h | --help | help)
+      usage
+      exit 0
+      ;;
+    *)
+      usage >&2
+      exit 1
+      ;;
+    esac
+  done
+}
 
 # @description Print the sha256 of a file — sha256sum on Linux, shasum on macOS.
 # @arg $1 string Path to the file to hash.
@@ -28,6 +66,18 @@ function sha256_of() {
     sha256sum "$1" | awk '{print $1}'
   else
     shasum -a 256 "$1" | awk '{print $1}'
+  fi
+}
+
+# @description Compare a file against a sha256 sidecar.
+# @arg $1 string Path to the file to verify.
+# @arg $2 string Path to the sidecar holding the expected digest.
+# @exitcode 0 The digests match.
+# @exitcode 1 The digests differ.
+function verify_checksum() {
+  if [ "$(awk '{print $1}' "$2")" != "$(sha256_of "$1")" ]; then
+    log_error "checksum mismatch for $1"
+    return 1
   fi
 }
 
@@ -84,9 +134,52 @@ function acquire_install_lock() {
   trap 'rm -rf "${lock_dir}"' EXIT
 }
 
-# @description Run `rnfmac upgrade`: download and verify the latest release
-#   tarball, install it as a new version dir (no-op if already current), flip
-#   `current`, and update macsetup-config without applying it.
+# @description Download the latest release tarball into `$1` and verify it against
+#   its published sidecar.
+# @arg $1 string Destination path for the downloaded tarball.
+# @exitcode 1 The download failed or the checksum did not match.
+function fetch_release_tarball() {
+  local tarball="$1"
+
+  ## unversioned asset name — the "latest" alias resolves to whichever release
+  ## tag currently owns it, so no api.github.com call is needed up front; the
+  ## tag is read from VERSION inside the downloaded tarball instead
+  log_info "Downloading latest release of ${GITHUB_REPO} ..."
+  curl -fsSL -o "${tarball}" "https://github.com/${GITHUB_REPO}/releases/latest/download/macsetup.tar.gz"
+
+  if curl -fsSL -o "${tarball}.sha256" "https://github.com/${GITHUB_REPO}/releases/latest/download/macsetup.tar.gz.sha256" 2>/dev/null; then
+    verify_checksum "${tarball}" "${tarball}.sha256" || return 1
+  else
+    log_warning "no checksum found for ${GITHUB_REPO} release tarball, skipping verification"
+  fi
+}
+
+# @description Stage the `--archive` tarball into `$1`, verifying it against a
+#   sibling `.sha256` sidecar when one exists.
+# @arg $1 string Destination path for the staged tarball.
+# @exitcode 1 The archive is missing, or its checksum did not match.
+function stage_local_archive() {
+  local tarball="$1"
+
+  if [ ! -f "${ARCHIVE}" ]; then
+    log_error "archive not found: ${ARCHIVE}"
+    return 1
+  fi
+
+  log_info "Installing from local archive ${ARCHIVE} ..."
+  ## a sidecar beside the archive is honoured exactly as the release one is; an
+  ## archive moved by hand is the case most likely to have been truncated
+  if [ -f "${ARCHIVE}.sha256" ]; then
+    verify_checksum "${ARCHIVE}" "${ARCHIVE}.sha256" || return 1
+  else
+    log_warning "no ${ARCHIVE}.sha256 sidecar found, skipping verification"
+  fi
+  cp "${ARCHIVE}" "${tarball}"
+}
+
+# @description Run `rnfmac upgrade`: stage the release tarball (downloaded, or the
+#   `--archive` one), install it as a new version dir (no-op if already current),
+#   flip `current`, and update macsetup-config without applying it.
 # @noargs
 function execute() {
   local tmp_dir tmp_tarball extract_dir version tag current_version dist_path
@@ -94,19 +187,10 @@ function execute() {
   tmp_dir="$(mktemp -d)"
   tmp_tarball="${tmp_dir}/macsetup.tar.gz"
 
-  ## unversioned asset name — the "latest" alias resolves to whichever release
-  ## tag currently owns it, so no api.github.com call is needed up front; the
-  ## tag is read from VERSION inside the downloaded tarball instead
-  log_info "Downloading latest release of ${GITHUB_REPO} ..."
-  curl -fsSL -o "${tmp_tarball}" "https://github.com/${GITHUB_REPO}/releases/latest/download/macsetup.tar.gz"
-
-  if curl -fsSL -o "${tmp_tarball}.sha256" "https://github.com/${GITHUB_REPO}/releases/latest/download/macsetup.tar.gz.sha256" 2>/dev/null; then
-    if [ "$(awk '{print $1}' "${tmp_tarball}.sha256")" != "$(sha256_of "${tmp_tarball}")" ]; then
-      log_error "checksum mismatch for ${GITHUB_REPO} release tarball"
-      exit 1
-    fi
+  if [ -n "${ARCHIVE}" ]; then
+    stage_local_archive "${tmp_tarball}" || exit 1
   else
-    log_warning "no checksum found for ${GITHUB_REPO} release tarball, skipping verification"
+    fetch_release_tarball "${tmp_tarball}" || exit 1
   fi
 
   extract_dir="${tmp_dir}/extracted"
@@ -122,10 +206,12 @@ function execute() {
     current_version="v$(cat "${PRODUCT_HOME}/current/VERSION")"
   fi
   if [ "${tag}" = "${current_version}" ]; then
-    log_success "already on the latest release (${current_version})"
+    log_success "already on ${current_version}"
     rm -rf "${tmp_dir}"
   else
-    log_notice "Upgrading ${current_version:-<none>} -> ${tag} ..."
+    ## an --archive tarball can legitimately be older than what is installed, so
+    ## this is worded as a move rather than an upgrade
+    log_notice "Installing ${tag} (current: ${current_version:-<none>}) ..."
     dist_path="${PRODUCT_HOME}/${tag}"
     mkdir -p "${PRODUCT_HOME}"
     acquire_install_lock "${PRODUCT_HOME}/.install.lock"
@@ -133,7 +219,7 @@ function execute() {
     ln -sfn "${tag}" "${PRODUCT_HOME}/current"
     rm -rf "${PRODUCT_HOME}/.install.lock" "${tmp_dir}"
     trap - EXIT
-    log_success "downloaded and unpacked ${tag}"
+    log_success "unpacked and installed ${tag}"
   fi
 
   "${PRODUCT_HOME}/current/commands/config/pull.sh"
@@ -142,5 +228,6 @@ function execute() {
 
 ${__SOURCED__:+return} # shellspec Include guard
 
+parse_args "$@"
 print_vars "RNF_HOME" "GITHUB_REPO" "PRODUCT_HOME"
-execute "$@"
+execute
