@@ -1,7 +1,7 @@
 # shellcheck shell=bash disable=SC2148,SC2317
 # specs for upgrade.sh — the curl stub serves a staged release tarball at the
-# unversioned releases/latest/download URL; the exec'd sync runs with
-# RNFMAC_SYNC_PROFILES_ONLY=1.
+# unversioned releases/latest/download URL. Upgrade updates configuration but
+# deliberately does not apply profile/brew/system sync.
 
 Describe 'upgrade.sh'
 BeforeEach 'setup_upgrade'
@@ -17,7 +17,8 @@ build_release_tarball "9.9.9" # stage v9.9.9 for the curl stub
 When run script "${HOME}/.rn-forge/macsetup/current/commands/upgrade.sh"
 The status should be success
 The output should include "Upgrading v${CHECKOUT_VERSION} -> v9.9.9"
-The output should include 'Profile synced successfully'
+The output should include 'configuration updated but not applied'
+The output should not include 'Profile synced successfully'
 The path "${HOME}/.rn-forge/macsetup/v9.9.9" should be directory
 The contents of file "${HOME}/.rn-forge/macsetup/current/VERSION" should include '9.9.9'
 The path "${HOME}/.rn-forge/macsetup/v${CHECKOUT_VERSION}" should be directory
@@ -28,6 +29,7 @@ build_release_tarball "${CHECKOUT_VERSION}" # stage the same version already ins
 When run script "${HOME}/.rn-forge/macsetup/current/commands/upgrade.sh"
 The status should be success
 The output should include "already on the latest release (v${CHECKOUT_VERSION})"
+The output should include 'macsetup config is current'
 The contents of file "${HOME}/.rn-forge/macsetup/current/VERSION" should include "${CHECKOUT_VERSION}"
 End
 

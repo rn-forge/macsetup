@@ -14,6 +14,10 @@ RELAY_STRATEGY="Library/Homebrew/download_strategy/remote_relay_curl_download_st
 
 setup_relay() {
   setup_sandbox
+  mkdir -p "${SANDBOX}/mocks"
+  printf '#!/bin/sh\n[ "$1" = update ] && exit 0\nexit 1\n' >"${SANDBOX}/mocks/brew"
+  chmod +x "${SANDBOX}/mocks/brew"
+  export PATH="${SANDBOX}/mocks:${PATH}"
   export RNFMAC_TEST_HOMEBREW_PREFIX="${SANDBOX}/homebrew"
   HOMEBREW_PREFIX="${RNFMAC_TEST_HOMEBREW_PREFIX}"
   mkdir -p "${HOMEBREW_PREFIX}/Library/Homebrew/cmd" "${HOMEBREW_PREFIX}/Library/Homebrew/download_strategy"

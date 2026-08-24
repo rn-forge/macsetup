@@ -17,9 +17,9 @@ blocked (e.g. a corporate proxy), set RNF_SHKIT_INSTALL_BUNDLE to the path of a
 shkit release tarball fetched out-of-band — it's extracted and its
 install.sh run locally instead of curling:
 RNF_SHKIT_INSTALL_BUNDLE=./shkit.tar.gz . ./install.sh
-Installs into ~/.rn-forge/macsetup/<version>/ and links rnfmac — it does not touch
-.zprofile/.zshrc or run bootstrap/sync; those stay with `rnfmac system init` /
-`rnfmac sync`.
+Installs into ~/.rn-forge/macsetup/<version>/, clones macsetup-config into the
+persistent product home, and links rnfmac. It does not touch .zprofile/.zshrc or
+run bootstrap/sync; those stay with `rnfmac system init` / `rnfmac sync`.
 Sourced contract: no `set -e`, no `exit` — a failure must never kill the caller's shell.
 Version: 3.0
 Author: Rohit Narayanan
@@ -30,6 +30,7 @@ Author: Rohit Narayanan
 * [_rnf_read_dist_version](#_rnf_read_dist_version)
 * [_rnf_acquire_install_lock](#_rnf_acquire_install_lock)
 * [_rnf_atomic_install](#_rnf_atomic_install)
+* [_rnf_install_config_checkout](#_rnf_install_config_checkout)
 * [rnfmac_install](#rnfmac_install)
 
 ### _rnf_sha256_of
@@ -96,10 +97,26 @@ install.
 * **0**: Install swapped into place successfully.
 * **1**: A step failed; destination is left untouched or removed, never partial.
 
+### _rnf_install_config_checkout
+
+Clone the persistent macsetup-config checkout on first install, or
+fast-forward an existing clean checkout. The checkout lives beside versioned
+application directories so future upgrades never replace it.
+
+#### Arguments
+
+* **$1** (string): Product home directory.
+
+#### Exit codes
+
+* **0**: Configuration checkout is current.
+* **1**: Git is unavailable, or clone/pull validation failed.
+
 ### rnfmac_install
 
-Install macsetup into `~/.rn-forge/macsetup/<version>/` and link
-`rnfmac` + its completion script. Streaming mode (no sibling dist next to this
+Install macsetup into `~/.rn-forge/macsetup/<version>/`, install or
+update macsetup-config, and link `rnfmac` + its completion script. Streaming
+mode (no sibling dist next to this
 script) downloads and verifies the latest release tarball; in-path mode (an
 unpacked dist or this repo's checkout sits alongside install.sh) installs
 straight from that tree. No-ops if `current` already matches the target version.

@@ -34,6 +34,7 @@ The output should include 'add to ~/.zprofile to persist'
 The path "${HOME}/.rn-forge/shkit/current/shkit.sh" should be file
 The path "${HOME}/.rn-forge/macsetup/v9.9.9" should be directory
 The path "${HOME}/.rn-forge/macsetup/current" should be symlink
+The path "${HOME}/.rn-forge/macsetup/config/.git" should be directory
 The path "${HOME}/.rn-forge/bin/rnfmac" should be symlink
 The path "${HOME}/.rn-forge/completions/_rnfmac" should be symlink
 The contents of file "${HOME}/.rn-forge/macsetup/current/VERSION" should include '9.9.9'
@@ -90,6 +91,7 @@ The status should be success
 The output should include "distribution installed (current -> v${CHECKOUT_VERSION})"
 The path "${HOME}/.rn-forge/macsetup/v${CHECKOUT_VERSION}" should be directory
 The contents of file "${HOME}/.rn-forge/macsetup/current/VERSION" should include "${CHECKOUT_VERSION}"
+The path "${HOME}/.rn-forge/macsetup/config/hosts/testhost/Brewfile" should be file
 End
 
 It 'in-path re-run from the already-installed dist is idempotent'

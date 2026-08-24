@@ -1,9 +1,10 @@
 #!/bin/zsh
 # shellcheck shell=bash
 # @file upgrade.sh
-# @brief `rnfmac upgrade` — downloads the latest macsetup release and installs it.
+# @brief `rnfmac upgrade` — installs the latest release and updates configuration.
 # @description
-#   Script to download the latest macsetup release and install it
+#   Downloads and installs the latest macsetup release, then updates the persistent
+#   macsetup-config checkout without applying profile, brew, or system sync.
 # Version: 2.0
 # Author: Rohit Narayanan
 
@@ -85,8 +86,8 @@ function acquire_install_lock() {
 
 # @description Run `rnfmac upgrade`: download and verify the latest release
 #   tarball, install it as a new version dir (no-op if already current), flip
-#   `current`, then exec the new dist's sync.sh to re-sync profile/brew/system.
-# @arg $@ string Forwarded to the new dist's `commands/sync.sh` on completion.
+#   `current`, and update macsetup-config without applying it.
+# @noargs
 function execute() {
   local tmp_dir tmp_tarball extract_dir version tag current_version dist_path
 
@@ -123,21 +124,20 @@ function execute() {
   if [ "${tag}" = "${current_version}" ]; then
     log_success "already on the latest release (${current_version})"
     rm -rf "${tmp_dir}"
-    return
+  else
+    log_notice "Upgrading ${current_version:-<none>} -> ${tag} ..."
+    dist_path="${PRODUCT_HOME}/${tag}"
+    mkdir -p "${PRODUCT_HOME}"
+    acquire_install_lock "${PRODUCT_HOME}/.install.lock"
+    atomic_install "${extract_dir}" "${dist_path}"
+    ln -sfn "${tag}" "${PRODUCT_HOME}/current"
+    rm -rf "${PRODUCT_HOME}/.install.lock" "${tmp_dir}"
+    trap - EXIT
+    log_success "downloaded and unpacked ${tag}"
   fi
 
-  log_notice "Upgrading ${current_version:-<none>} -> ${tag} ..."
-  dist_path="${PRODUCT_HOME}/${tag}"
-  mkdir -p "${PRODUCT_HOME}"
-  acquire_install_lock "${PRODUCT_HOME}/.install.lock"
-  atomic_install "${extract_dir}" "${dist_path}"
-  ln -sfn "${tag}" "${PRODUCT_HOME}/current"
-  rm -rf "${PRODUCT_HOME}/.install.lock" "${tmp_dir}"
-  trap - EXIT
-  log_success "downloaded and unpacked ${tag}"
-
-  ## flips `current` to the new dist and re-syncs profile/brew/system
-  exec "${dist_path}/commands/sync.sh"
+  "${PRODUCT_HOME}/current/commands/config/pull.sh"
+  log_notice "configuration updated but not applied — run 'rnfmac sync' to apply it"
 }
 
 ${__SOURCED__:+return} # shellspec Include guard

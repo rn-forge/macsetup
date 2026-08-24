@@ -5,7 +5,7 @@
 FIXTURES="${SHELLSPEC_PROJECT_ROOT}/tests/fixtures"
 
 setup_sandbox() {
-  SANDBOX="${SHELLSPEC_TMPBASE}/sandbox.$$.${SHELLSPEC_EXAMPLE_NO:-0}"
+  SANDBOX="$(mktemp -d "${SHELLSPEC_TMPBASE}/macsetup.XXXXXX")"
   export HOME="${SANDBOX}/home"
   mkdir -p "${HOME}/.rn-forge" "${HOME}/.oh-my-zsh/custom/themes"
   printf 'source $ZSH/oh-my-zsh.sh\n' >"${HOME}/.zshrc"
@@ -28,6 +28,26 @@ setup_sandbox() {
   printf '# shellcheck disable=SC2148\nexport RNF_TEST_HOST_MARKER=1\n' >"${CHECKOUT}/src/profiles/testhost/profile.zsh"
   printf '# test Brewfile — intentionally empty\n' >"${CHECKOUT}/src/profiles/testhost/Brewfile"
 
+  # local macsetup-config origin: installers clone it and commands pull/push it
+  # without touching the network.
+  CONFIG_SEED="${SANDBOX}/config-seed"
+  CONFIG_ORIGIN="${SANDBOX}/macsetup-config.git"
+  mkdir -p "${CONFIG_SEED}/shared" "${CONFIG_SEED}/hosts/testhost"
+  cp "${FIXTURES}/config/shared/profile.zsh" "${CONFIG_SEED}/shared/profile.zsh"
+  cp "${FIXTURES}/config/shared/aliases.zsh" "${CONFIG_SEED}/shared/aliases.zsh"
+  cp "${CHECKOUT}/src/profiles/testhost/profile.zsh" "${CONFIG_SEED}/hosts/testhost/profile.zsh"
+  cp "${CHECKOUT}/src/profiles/testhost/Brewfile" "${CONFIG_SEED}/hosts/testhost/Brewfile"
+  git -C "${CONFIG_SEED}" init -b main >/dev/null
+  git -C "${CONFIG_SEED}" config user.name 'ShellSpec'
+  git -C "${CONFIG_SEED}" config user.email 'shellspec@example.invalid'
+  git -C "${CONFIG_SEED}" add .
+  git -C "${CONFIG_SEED}" commit -m 'Initial config' >/dev/null
+  git init --bare "${CONFIG_ORIGIN}" >/dev/null 2>&1
+  git -C "${CONFIG_SEED}" remote add origin "${CONFIG_ORIGIN}"
+  git -C "${CONFIG_SEED}" push -u origin main >/dev/null 2>&1
+  git --git-dir="${CONFIG_ORIGIN}" symbolic-ref HEAD refs/heads/main
+  export RNFMAC_CONFIG_REPO_URL="${CONFIG_ORIGIN}"
+
   # command stubs (hostname, curl) shadow the real tools for scripts run as child processes
   export PATH="${FIXTURES}/stubs:${PATH}"
   # safety net: integration runs must never reach brew/uv/nvm/sdkman
@@ -43,6 +63,8 @@ cleanup_sandbox() {
 # (profile/sync.sh, sync.sh, doctor.sh, upgrade.sh, brew/relay.sh --regen) have one.
 install_dist_from_checkout() {
   "${CHECKOUT}/src/install.sh" >/dev/null 2>&1
+  git -C "${HOME}/.rn-forge/macsetup/config" config user.name 'ShellSpec'
+  git -C "${HOME}/.rn-forge/macsetup/config" config user.email 'shellspec@example.invalid'
 }
 
 run_sync_from_checkout() {

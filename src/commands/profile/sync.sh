@@ -95,15 +95,19 @@ function update_zshrc() {
 # @exitcode 1 No profile exists for the current host.
 function render_profile() {
   log_verbose "Rendering profile for host '${HOST_NAME}' ..."
-  local host_profile="${PRODUCT_HOME}/current/profiles/${HOST_NAME}/profile.zsh"
+  local host_profile="${CONFIG_HOME}/hosts/${HOST_NAME}/profile.zsh"
 
   if [ ! -f "${host_profile}" ]; then
-    log_warning "no profile for host '${HOST_NAME}' — create src/profiles/${HOST_NAME}/ first"
+    log_warning "no profile for host '${HOST_NAME}' — create hosts/${HOST_NAME}/ in macsetup-config"
     exit 1
   fi
 
   render_profile_content >"${PRODUCT_HOME}/profile.zsh"
-  cp -f "${PRODUCT_HOME}/current/profiles/${HOST_NAME}/Brewfile" "${PRODUCT_HOME}/Brewfile"
+  if [ ! -f "${CONFIG_HOME}/hosts/${HOST_NAME}/Brewfile" ]; then
+    log_warning "no Brewfile for host '${HOST_NAME}' — create hosts/${HOST_NAME}/Brewfile in macsetup-config"
+    exit 1
+  fi
+  cp -f "${CONFIG_HOME}/hosts/${HOST_NAME}/Brewfile" "${PRODUCT_HOME}/Brewfile"
 }
 
 # @description Patch .zprofile/.zshrc, install the oh-my-zsh theme, and install

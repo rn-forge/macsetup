@@ -4,8 +4,7 @@
 
 ## Overview
 
-Composer: profile sync -> brew sync -> system sync, in that order (profile first
-so a new dist's Brewfile/pins are what get applied).
+Composer: config pull -> profile sync -> brew sync -> system sync, in that order.
 Version: 1.0
 Author: Rohit Narayanan
 

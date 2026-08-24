@@ -16,15 +16,16 @@
 # shkit release tarball fetched out-of-band — it's extracted and its
 # install.sh run locally instead of curling:
 #     RNF_SHKIT_INSTALL_BUNDLE=./shkit.tar.gz . ./install.sh
-# Installs into ~/.rn-forge/macsetup/<version>/ and links rnfmac — it does not touch
-# .zprofile/.zshrc or run bootstrap/sync; those stay with `rnfmac system init` /
-# `rnfmac sync`.
+# Installs into ~/.rn-forge/macsetup/<version>/, clones macsetup-config into the
+# persistent product home, and links rnfmac. It does not touch .zprofile/.zshrc or
+# run bootstrap/sync; those stay with `rnfmac system init` / `rnfmac sync`.
 # Sourced contract: no `set -e`, no `exit` — a failure must never kill the caller's shell.
 # Version: 3.0
 # Author: Rohit Narayanan
 
 RNF_HOME="${HOME}/.rn-forge"
 RNF_GITHUB_ORG="${RNF_GITHUB_ORG:-rn-forge}"
+RNFMAC_CONFIG_REPO_URL="${RNFMAC_CONFIG_REPO_URL:-https://github.com/${RNF_GITHUB_ORG}/macsetup-config.git}"
 
 ## Sourced at file top level, not inside a function: under zsh, $0 (and readonly
 ## constants) sourced from inside a function become function-local/scoped to the
@@ -125,8 +126,39 @@ function _rnf_atomic_install() {
   mv "${tmp_dist}" "${dist_path}" || return 1
 }
 
-# @description Install macsetup into `~/.rn-forge/macsetup/<version>/` and link
-#   `rnfmac` + its completion script. Streaming mode (no sibling dist next to this
+# @description Clone the persistent macsetup-config checkout on first install, or
+#   fast-forward an existing clean checkout. The checkout lives beside versioned
+#   application directories so future upgrades never replace it.
+# @arg $1 string Product home directory.
+# @exitcode 0 Configuration checkout is current.
+# @exitcode 1 Git is unavailable, or clone/pull validation failed.
+function _rnf_install_config_checkout() {
+  local config_home="${1}/config"
+  if ! command -v git >/dev/null 2>&1; then
+    log_error "git is required to install macsetup configuration"
+    return 1
+  fi
+
+  if [ ! -e "${config_home}" ]; then
+    log_info "cloning macsetup config from ${RNFMAC_CONFIG_REPO_URL} ..."
+    git clone --quiet --branch main --single-branch "${RNFMAC_CONFIG_REPO_URL}" "${config_home}" || return 1
+  else
+    if ! git -C "${config_home}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+      log_error "existing config path is not a git checkout: ${config_home}"
+      return 1
+    fi
+    if [ -n "$(git -C "${config_home}" status --porcelain)" ]; then
+      log_error "macsetup config has local changes — publish or discard them before updating"
+      return 1
+    fi
+    git -C "${config_home}" pull --quiet --ff-only origin main || return 1
+  fi
+  log_success "macsetup config is current ($(git -C "${config_home}" rev-parse --short HEAD))"
+}
+
+# @description Install macsetup into `~/.rn-forge/macsetup/<version>/`, install or
+#   update macsetup-config, and link `rnfmac` + its completion script. Streaming
+#   mode (no sibling dist next to this
 #   script) downloads and verifies the latest release tarball; in-path mode (an
 #   unpacked dist or this repo's checkout sits alongside install.sh) installs
 #   straight from that tree. No-ops if `current` already matches the target version.
@@ -216,6 +248,8 @@ function rnfmac_install() {
   fi
   [ -n "${tmp_dir}" ] && rm -rf "${tmp_dir}"
 
+  _rnf_install_config_checkout "${product_home}" || return 1
+
   log_info ""
   log_info "macsetup ${tag} installed. next steps:"
   log_info "  export PATH=\"${rnf_home}/bin:\${PATH}\"   # add to ~/.zprofile to persist across shells"
@@ -227,7 +261,7 @@ ${__SOURCED__:+return} # shellspec Include guard
 
 rnfmac_install
 _rnfmac_install_status=$?
-unset -f rnfmac_install _rnf_sha256_of _rnf_read_dist_version _rnf_acquire_install_lock _rnf_atomic_install
+unset -f rnfmac_install _rnf_sha256_of _rnf_read_dist_version _rnf_acquire_install_lock _rnf_atomic_install _rnf_install_config_checkout
 unset _rnf_shkit_loaded
 if [ "${_rnfmac_install_status}" -eq 0 ]; then
   ## PATH for the current shell — the payoff of sourcing this script

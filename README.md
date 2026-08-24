@@ -8,7 +8,7 @@ Pure shell/Ruby/AWK — no build system beyond [`mise`](https://mise.jdx.dev) fo
 
 | Concern | How it's handled |
 | --- | --- |
-| Package manager | Homebrew, with per-machine `Brewfile`s (`brew bundle install` + `cleanup`) |
+| Package manager | Homebrew, with per-machine `Brewfile`s from `macsetup-config` (`brew bundle install` + `cleanup`) |
 | Shell | oh-my-zsh + `zsh-completions`, `zsh-autosuggestions`, `zsh-syntax-highlighting`, custom theme |
 | Python | [uv](https://docs.astral.sh/uv/) (pinned to Python 3.15) |
 | Node.js | [nvm](https://github.com/nvm-sh/nvm) (latest LTS) |
@@ -33,7 +33,7 @@ From a git checkout or unpacked release dist:
 . src/install.sh
 ```
 
-Either way this installs into `~/.rn-forge/macsetup/<version>/`, symlinks `current`, links `rnfmac` + its zsh completion into `~/.rn-forge/bin` / `~/.rn-forge/completions`, and exports `PATH` for the current shell. Add the `PATH` export to `~/.zprofile` to persist it. It does **not** touch shell rc files or install anything else — that's the next two steps.
+Either way this installs into `~/.rn-forge/macsetup/<version>/`, clones `macsetup-config` into `~/.rn-forge/macsetup/config`, symlinks `current`, links `rnfmac` + its zsh completion into `~/.rn-forge/bin` / `~/.rn-forge/completions`, and exports `PATH` for the current shell. Add the `PATH` export to `~/.zprofile` to persist it. Set `RNFMAC_CONFIG_REPO_URL` before installation to override the default `https://github.com/rn-forge/macsetup-config.git`. It does **not** touch shell rc files or apply configuration — that's the next two steps.
 
 ### 2. Bootstrap a brand-new Mac (run once, as local admin)
 
@@ -49,47 +49,51 @@ Installs, in order: Homebrew → Homebrew Remote Relay → oh-my-zsh (+ plugins)
 rnfmac sync
 ```
 
-Composes three steps, in order:
+Composes four steps, in order:
 
-1. **`rnfmac profile sync`** — renders shared + host `profile.zsh` into `~/.rn-forge/macsetup/profile.zsh`, patches `.zprofile`/`.zshrc` to source it (existing rc files are backed up first), installs the custom zsh theme and macOS keybindings.
-2. **`rnfmac brew sync`** — `brew bundle install` and `brew bundle cleanup` against the machine's `Brewfile`, so the installed set exactly matches the profile.
-3. **`rnfmac system sync`** — installs the pinned runtimes: Python 3.15 (uv), Node LTS (nvm), Java 21 Temurin (SDKMAN).
+1. **`rnfmac config pull`** — fast-forwards the persistent `macsetup-config` checkout from `origin/main`.
+2. **`rnfmac profile sync`** — renders shared + host `profile.zsh` into `~/.rn-forge/macsetup/profile.zsh`, patches `.zprofile`/`.zshrc` to source it (existing rc files are backed up first), installs the custom zsh theme and macOS keybindings.
+3. **`rnfmac brew sync`** — `brew bundle install` and `brew bundle cleanup` against the machine's `Brewfile`, so the installed set exactly matches the profile.
+4. **`rnfmac system sync`** — installs the pinned runtimes: Python 3.15 (uv), Node LTS (nvm), Java 21 Temurin (SDKMAN).
 
 ### Other commands
 
 ```sh
 rnfmac doctor           # read-only health sweep across system/profile/brew — exit 1 if anything's drifted
 rnfmac version          # print the installed version
-rnfmac upgrade          # fetch and install the latest GitHub release, flip `current`
+rnfmac upgrade          # install the latest release and pull config, without applying sync
 rnfmac cleanup          # delete every installed version except the one `current` points to
 rnfmac system doctor    # read-only toolchain health check (Homebrew, oh-my-zsh, uv, nvm, SDKMAN presence)
 rnfmac profile check    # does the installed profile match what sync would render?
 rnfmac brew diff        # drift between installed packages and the Brewfile (--write to update it)
+rnfmac config status    # show config branch, revision, and local changes
+rnfmac config pull      # fast-forward a clean config checkout from origin/main
+rnfmac config push -m "Update host config" # commit and publish config changes
 rnfmac brew relay       # (re)apply the Homebrew Remote Relay patches
 rnfmac --help           # list all sub-commands and groups
 ```
 
-## Machine profiles
+## Machine configuration
 
-Each machine gets a directory under `src/profiles/` named after its lowercased short hostname (`hostname | cut -d. -f1`):
+The changing shell and Homebrew configuration lives in a separate `rn-forge/macsetup-config` repository, cloned persistently to `~/.rn-forge/macsetup/config`. Each machine gets a directory named after its lowercased short hostname (`hostname | cut -d. -f1`):
 
 ```text
-src/profiles/
+macsetup-config/
 ├── shared/                 # common to all machines
 │   ├── profile.zsh         #   shell env: homebrew, oh-my-zsh, uv, nvm, sdkman
-│   ├── rohitnarayanan.zsh-theme
-│   └── DefaultKeyBinding.dict
-├── rohitmacbook/           # one directory per machine
-│   ├── profile.zsh         #   machine-specific env vars / overrides
-│   └── Brewfile            #   machine-specific package set
-├── rohitmacmini/
-├── 02hw067696/
-└── rpu-rnaray-3m2c/
+│   └── aliases.zsh         #   shared aliases/functions
+└── hosts/
+    ├── rohitmacbook/       # one directory per machine
+    │   ├── profile.zsh     #   machine-specific env vars / overrides
+    │   └── Brewfile        #   machine-specific package set
+    └── rohitmacmini/
 ```
 
 At sync time, shared `profile.zsh` is rendered first, then the machine's — host settings win by coming last, all concatenated into one file that `rnfmac profile sync` sources from the shell rc.
 
-**To add a new machine:** create `src/profiles/<hostname>/` with a `profile.zsh` and a `Brewfile`, then run `rnfmac sync` on that machine.
+**To add a new machine:** create `hosts/<hostname>/` in `macsetup-config` with a `profile.zsh` and a `Brewfile`, publish it, then run `rnfmac sync` on that machine.
+
+`rnfmac brew diff --write` writes into the current host's config checkout. Review the diff, then publish it explicitly with `rnfmac config push -m "..."`. Pulls use `--ff-only` and refuse local changes; they never merge, rebase, or overwrite edits.
 
 ## Homebrew Remote Relay
 
@@ -107,7 +111,7 @@ When `HOMEBREW_REMOTE_RELAY_ENABLED=1`, a custom `RemoteRelayCurlDownloadStrateg
 - `src/homebrew/patches/` — patches for `download_strategy.rb`, `download_strategy_detector.rb`, and `cmd/vendor-install.sh` (so vendored downloads also go through the relay)
 - `src/homebrew/download_strategy/remote_relay_curl_download_strategy.rb` — the new strategy class
 
-Configuration (set in `src/profiles/shared/profile.zsh`):
+Configuration (set in `macsetup-config/shared/profile.zsh`):
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
@@ -124,19 +128,18 @@ src/
 ├── rnfmac.sh                        # dispatcher: rnfmac <sub-command> [<sub-command>] [args]
 ├── install.sh                       # standalone installer (sourced), also a release asset
 ├── commands/
-│   ├── sync.sh                      # composes profile sync -> brew sync -> system sync
+│   ├── sync.sh                      # config pull -> profile sync -> brew sync -> system sync
 │   ├── doctor.sh                    # read-only sweep across all groups
 │   ├── version.sh
 │   ├── upgrade.sh
 │   ├── cleanup.sh                   # deletes old versions, keeps `current`
 │   ├── system/                      # init.sh (bootstrap), sync.sh (runtimes), doctor.sh
 │   ├── profile/                     # sync.sh, check.sh, lib.sh (shared helpers)
+│   ├── config/                      # pull.sh, status.sh, push.sh, lib.sh
 │   └── brew/                        # sync.sh, diff.sh, relay.sh
 ├── completions/_rnfmac              # zsh completion, enumerates commands/ at runtime
 ├── homebrew/                        # Remote Relay patches + strategy class
-└── profiles/
-    ├── shared/                      # common shell config, theme, keybindings
-    └── <hostname>/                  # per-machine profile.zsh + Brewfile
+└── profiles/shared/                 # stable bundled theme and keybindings
 ```
 
 `~/.rn-forge` (`RNF_HOME`) is the shared home for the rn-forge product family: each product installs to `~/.rn-forge/<product>/<version>/` with a `current` symlink, plus one symlink per product under `~/.rn-forge/bin/` and `~/.rn-forge/completions/`. Upgrade/rollback is just flipping `current`.

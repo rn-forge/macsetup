@@ -3,8 +3,7 @@
 # @file sync.sh
 # @brief `rnfmac sync` — the everyday sync command.
 # @description
-#   Composer: profile sync -> brew sync -> system sync, in that order (profile first
-#   so a new dist's Brewfile/pins are what get applied).
+#   Composer: config pull -> profile sync -> brew sync -> system sync, in that order.
 # Version: 1.0
 # Author: Rohit Narayanan
 
@@ -21,6 +20,7 @@ PRODUCT_HOME="${RNF_HOME}/macsetup"
 # @exitcode 0 All steps succeeded.
 # @exitcode 1 A step failed (propagated via `set -e`).
 function execute() {
+  "${COMMANDS_PATH}/config/pull.sh"
   "${COMMANDS_PATH}/profile/sync.sh"
   source "${PRODUCT_HOME}/profile.zsh"
 

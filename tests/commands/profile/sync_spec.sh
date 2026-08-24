@@ -70,7 +70,7 @@ End
 
 It 'fails clearly when the host has no profile directory'
 install_dist_from_checkout
-rm -rf "${CHECKOUT}/src/profiles/testhost" "${HOME}/.rn-forge/macsetup/current/profiles/testhost"
+rm -rf "${HOME}/.rn-forge/macsetup/config/hosts/testhost"
 When run script "${CHECKOUT}/src/commands/profile/sync.sh"
 The status should be failure
 The output should include "no profile for host 'testhost'"
@@ -90,14 +90,15 @@ BeforeEach 'setup_sandbox'
 AfterEach 'cleanup_sandbox'
 
 It 'render_profile writes shared content before host overrides'
-mkdir -p "${SANDBOX}/product/current/profiles/shared" "${SANDBOX}/product/current/profiles/testhost"
-echo 'echo shared-part' >"${SANDBOX}/product/current/profiles/shared/profile.zsh"
-echo '# aliases' >"${SANDBOX}/product/current/profiles/shared/aliases.zsh"
-echo 'echo host-part' >"${SANDBOX}/product/current/profiles/testhost/profile.zsh"
-echo '# brewfile' >"${SANDBOX}/product/current/profiles/testhost/Brewfile"
+mkdir -p "${SANDBOX}/product/config/shared" "${SANDBOX}/product/config/hosts/testhost"
+echo 'echo shared-part' >"${SANDBOX}/product/config/shared/profile.zsh"
+echo '# aliases' >"${SANDBOX}/product/config/shared/aliases.zsh"
+echo 'echo host-part' >"${SANDBOX}/product/config/hosts/testhost/profile.zsh"
+echo '# brewfile' >"${SANDBOX}/product/config/hosts/testhost/Brewfile"
 write_unit_driver \
   'profile/sync.sh' \
   "PRODUCT_HOME='${SANDBOX}/product'" \
+  "CONFIG_HOME='${SANDBOX}/product/config'" \
   "HOST_NAME='testhost'" \
   'render_profile' \
   "shared_line=\$(grep -n 'shared-part' '${SANDBOX}/product/profile.zsh' | cut -d: -f1)" \

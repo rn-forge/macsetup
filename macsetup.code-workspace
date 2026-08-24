@@ -1,10 +1,16 @@
 {
   "folders": [
     {
+      "name": "macsetup",
       "path": "."
     },
     {
-      "path": "/opt/homebrew"
+      "name": "macsetup-config",
+      "path": "../macsetup-config"
+    },
+    {
+      "name": "homebrew",
+      "path": "../../../../../../opt/homebrew"
     }
   ],
   "settings": {}

@@ -4,7 +4,7 @@
 # @brief `rnfmac brew diff` — read-only Homebrew drift report.
 # @description
 #   Report drift between installed Homebrew packages and the host Brewfile.
-#   --write updates the Brewfile from installed state — requires a git checkout.
+#   --write updates the Brewfile in the persistent macsetup-config checkout.
 #   Exit 0 no drift, 1 drift/problems found.
 # Version: 1.0
 # Author: Rohit Narayanan
@@ -14,12 +14,9 @@ set -eo pipefail
 RNF_HOME="${HOME}/.rn-forge"
 source "${RNF_HOME}/shkit/current/shkit.sh"
 
-SELF_PATH="$(readlink -f "$0")"
-SRC_ROOT="$(dirname "$(dirname "$(dirname "${SELF_PATH}")")")" # unpacked dist root, or src/ in a git checkout
-
 PRODUCT_HOME="${RNF_HOME}/macsetup"
 HOST_NAME="$(hostname | tr '[:upper:]' '[:lower:]' | cut -d. -f1)"
-BREWFILE="${PRODUCT_HOME}/current/profiles/${HOST_NAME}/Brewfile"
+BREWFILE="${PRODUCT_HOME}/config/hosts/${HOST_NAME}/Brewfile"
 WRITE_FLAG=0
 
 # =============================================================================
@@ -51,15 +48,6 @@ function parse_args() {
     exit 1
     ;;
   esac
-}
-
-# @description Print the git checkout root containing `SRC_ROOT`, if any.
-# @noargs
-# @stdout The checkout's top-level path, or nothing if `SRC_ROOT` isn't in a git checkout.
-function checkout_root() {
-  if git -C "${SRC_ROOT}" rev-parse --show-toplevel >/dev/null 2>&1; then
-    git -C "${SRC_ROOT}" rev-parse --show-toplevel
-  fi
 }
 
 # =============================================================================
@@ -96,18 +84,18 @@ function report_diff() {
 }
 
 # @description Dump installed Homebrew package state to the host's Brewfile.
-#   Requires `SRC_ROOT` to be inside a git checkout.
+#   Writes into the persistent macsetup-config checkout.
 # @noargs
-# @exitcode 1 Not run from a git checkout.
+# @exitcode 1 The macsetup-config checkout is missing.
 function write_brewfile() {
-  local root
-  root="$(checkout_root)"
-  if [ -z "${root}" ]; then
-    log_warning "'--write' requires a git checkout — run via 'src/rnfmac.sh brew diff --write' from the macsetup checkout"
+  local config_home="${PRODUCT_HOME}/config"
+  if ! git -C "${config_home}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    log_warning "macsetup config checkout is missing at ${config_home}"
     exit 1
   fi
 
-  local target="${root}/src/profiles/${HOST_NAME}/Brewfile"
+  local target="${config_home}/hosts/${HOST_NAME}/Brewfile"
+  mkdir -p "$(dirname "${target}")"
   log_verbose "Writing installed package state to ${target} ..."
   brew bundle dump --file="${target}" --force --no-vscode --no-uv --no-npm
 

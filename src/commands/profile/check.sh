@@ -38,9 +38,9 @@ function report_problem() {
 # @noargs
 # @exitcode 1 No profile for this host (reported via `report_problem`).
 function check_host_profile() {
-  local host_profile="${PRODUCT_HOME}/current/profiles/${HOST_NAME}/profile.zsh"
+  local host_profile="${CONFIG_HOME}/hosts/${HOST_NAME}/profile.zsh"
   if [ ! -f "${host_profile}" ]; then
-    report_problem "no profile for host '${HOST_NAME}' — create src/profiles/${HOST_NAME}/ first"
+    report_problem "no profile for host '${HOST_NAME}' — create hosts/${HOST_NAME}/ in macsetup-config"
     return 1
   fi
 }

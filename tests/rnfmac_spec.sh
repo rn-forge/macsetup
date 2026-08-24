@@ -16,6 +16,7 @@ The output should include 'version'
 The output should include 'system ...'
 The output should include 'profile ...'
 The output should include 'brew ...'
+The output should include 'config ...'
 End
 
 It 'shows usage for --help'

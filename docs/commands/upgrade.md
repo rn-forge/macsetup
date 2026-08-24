@@ -1,10 +1,11 @@
 # upgrade.sh
 
-`rnfmac upgrade` — downloads the latest macsetup release and installs it.
+`rnfmac upgrade` — installs the latest release and updates configuration.
 
 ## Overview
 
-Script to download the latest macsetup release and install it
+Downloads and installs the latest macsetup release, then updates the persistent
+macsetup-config checkout without applying profile, brew, or system sync.
 Version: 2.0
 Author: Rohit Narayanan
 
@@ -77,9 +78,7 @@ standalone (never sourced into a caller's shell), so a trap here is safe.
 
 Run `rnfmac upgrade`: download and verify the latest release
 tarball, install it as a new version dir (no-op if already current), flip
-`current`, then exec the new dist's sync.sh to re-sync profile/brew/system.
+`current`, and update macsetup-config without applying it.
 
-#### Arguments
-
-* **...** (string): Forwarded to the new dist's `commands/sync.sh` on completion.
+_Function has no arguments._
 

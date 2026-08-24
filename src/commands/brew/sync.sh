@@ -18,7 +18,7 @@ export RNF_LOG_LEVEL=${RNF_LOG_LEVEL_DEBUG}
 ## global variables
 PRODUCT_HOME="${RNF_HOME}/macsetup"
 HOST_NAME="$(hostname | tr '[:upper:]' '[:lower:]' | cut -d. -f1)"
-BREWFILE="${PRODUCT_HOME}/current/profiles/${HOST_NAME}/Brewfile"
+BREWFILE="${PRODUCT_HOME}/config/hosts/${HOST_NAME}/Brewfile"
 
 # @description Run `brew bundle install` + `cleanup` against `BREWFILE`.
 # @noargs

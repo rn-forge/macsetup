@@ -10,6 +10,7 @@
 # Author: Rohit Narayanan
 
 PRODUCT_HOME="${RNF_HOME}/macsetup"
+CONFIG_HOME="${PRODUCT_HOME}/config"
 HOST_NAME="$(hostname | tr '[:upper:]' '[:lower:]' | cut -d. -f1)"
 # shellcheck disable=SC2034 # consumed by callers that source this file, not used here
 MACSETUP_MARKER="#################### macsetup"
@@ -22,14 +23,14 @@ MACSETUP_SOURCE_LINE="source ${PRODUCT_HOME}/profile.zsh"
 # @stdout The rendered profile.zsh content, with marker headers.
 function render_profile_content() {
   local shared_profile host_profile
-  shared_profile="${PRODUCT_HOME}/current/profiles/shared/profile.zsh"
-  host_profile="${PRODUCT_HOME}/current/profiles/${HOST_NAME}/profile.zsh"
+  shared_profile="${CONFIG_HOME}/shared/profile.zsh"
+  host_profile="${CONFIG_HOME}/hosts/${HOST_NAME}/profile.zsh"
 
   echo "#################### macsetup profile — rendered by profile/sync.sh, DO NOT EDIT"
   cat "${shared_profile}"
   echo ""
   echo "#################### aliases"
-  cat "${PRODUCT_HOME}/current/profiles/shared/aliases.zsh"
+  cat "${CONFIG_HOME}/shared/aliases.zsh"
   echo ""
   echo "#################### host overrides: ${HOST_NAME}"
   cat "${host_profile}"
