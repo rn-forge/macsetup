@@ -78,10 +78,8 @@ against `sdk list java`'s output. A spec already ending `-tem` is trusted
 as-is (an exact identifier); otherwise it's matched as a major-version prefix
 against the Identifier column — always the last `|`-delimited field, and the
 one column reliably tagged `-tem` for Temurin regardless of how the Vendor
-column is spelled (it print full names like "Temurin", not an abbreviation —
-matching on Vendor directly is what silently broke this sync previously: the
-filter matched nothing, the resolved version was empty, and `sdk install java
-""` fell back to installing whatever SDKMAN's own default happened to be).
+column is spelled. Match on Identifier, not Vendor: Vendor's spelling isn't
+consistent enough to filter on.
 
 #### Arguments
 
