@@ -4,3 +4,6 @@
 
 # generated artifacts
 dist/
+
+# sonar-cleanup scratch space
+.sonar-cleanup/

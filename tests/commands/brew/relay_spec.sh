@@ -87,14 +87,14 @@ The path "${HOMEBREW_PREFIX}/${RELAY_STRATEGY}" should not be exist
 End
 
 It 'no-op mode skips with confirmation when already applied'
-git -C "${HOMEBREW_PREFIX}" commit -q --allow-empty -m 'rn-forge: apply Homebrew remote relay'
+git -C "${HOMEBREW_PREFIX}" -c user.name=spec -c user.email=spec@test commit -q --allow-empty -m 'rn-forge: apply Homebrew remote relay'
 When run script "${CHECKOUT}/src/commands/brew/relay.sh"
 The status should be success
 The output should include 'already applied'
 End
 
 It '--force resets and unconditionally reapplies rather than short-circuiting when already applied'
-git -C "${HOMEBREW_PREFIX}" commit -q --allow-empty -m 'rn-forge: apply Homebrew remote relay'
+git -C "${HOMEBREW_PREFIX}" -c user.name=spec -c user.email=spec@test commit -q --allow-empty -m 'rn-forge: apply Homebrew remote relay'
 When run script "${CHECKOUT}/src/commands/brew/relay.sh" --force
 The status should be failure
 The output should include 'Resetting and reapplying'

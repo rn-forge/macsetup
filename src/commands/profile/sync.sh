@@ -128,7 +128,10 @@ function sync_profile() {
   local theme_value
   theme_value="$(grep '^export ZSH_THEME=' "${PRODUCT_HOME}/profile.zsh" | head -1 | cut -d= -f2-)"
   backup "${HOME}/.zshrc"
-  sed -i '' "s|^ZSH_THEME=.*|ZSH_THEME=${theme_value}|" "${HOME}/.zshrc"
+  local zshrc_tmp
+  zshrc_tmp="$(mktemp)"
+  sed "s|^ZSH_THEME=.*|ZSH_THEME=${theme_value}|" "${HOME}/.zshrc" >"${zshrc_tmp}"
+  mv "${zshrc_tmp}" "${HOME}/.zshrc"
 
   ## Setting up keybindings
   log_verbose "Setting up keybindings ..."

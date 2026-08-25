@@ -55,6 +55,15 @@ setup_sandbox() {
   return 0
 }
 
+# doctor-style specs must never shell out to a real Homebrew/uv on the dev
+# machine (a real `brew` call can hit the network and mutate system state).
+# Strips PATH down to the base OS dirs (+ FIXTURES stubs), so `command -v`
+# genuinely finds nothing unless a mocks dir is prepended afterward.
+mask_real_toolchain() {
+  export PATH="${FIXTURES}/stubs:/usr/bin:/bin:/usr/sbin:/sbin"
+  return 0
+}
+
 cleanup_sandbox() {
   rm -rf "${SANDBOX}"
   return 0

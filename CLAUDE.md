@@ -19,7 +19,7 @@ mise run clean             # remove dist/
 
 Required tool versions are pinned in `.mise.toml`: `shellcheck 0.11.0`, `shfmt 3.13.1` (`shellspec` is not pinned there — CI installs it via a direct curl install script, since mise has no shellspec plugin). `tests/` holds a `shellspec` suite (specs for install, upgrade, cleanup, profile sync, brew sync/relay, and the `rnfmac` dispatcher) run against a sandboxed `$HOME` with stubbed `curl`/`hostname` (`tests/spec_helper.sh`). `system/init.sh` and `system/sync.sh` have no specs by convention, not oversight: they talk to real Homebrew/oh-my-zsh/uv/nvm/SDKMAN installers over the network with no mockable seam, so that surface is verified manually instead.
 
-Coverage (`kcov`) was evaluated and deliberately skipped: it installs and runs on macOS but its line-tracing is a no-op there (confirmed empirically — a script that visibly executes still reports 0% covered lines). Don't add a coverage gate here.
+Coverage (`kcov`) is a macOS no-op (confirmed empirically — a script that visibly executes still reports 0% covered lines), so `mise run test`/`mise run verify` (macOS) never run it and there's no local coverage gate. The `sonar` job in `.github/workflows/main.yml` runs on `ubuntu-latest`, where kcov's line-tracing works, and is the one place coverage is generated: `shellspec --kcov tests/` produces `coverage/sonarqube.xml`, which `sonar-project.properties`' `sonar.coverage.reportPaths` feeds to the SonarCloud quality gate.
 
 ## Architecture
 

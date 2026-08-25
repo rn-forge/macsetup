@@ -38,6 +38,24 @@ done
 description = "Remove generated dist/ artifacts"
 run = "rm -rf dist/"
 
+[tasks.bump]
+description = "Bump VERSION (patch|minor|major) — writes VERSION only; review and commit yourself"
+usage = '''
+arg "<part>" help="Which part to bump" {
+  choices "patch" "minor" "major"
+}
+'''
+run = """
+IFS=. read -r major minor patch <VERSION || true
+case "${usage_part?}" in
+  major) major=$((major + 1)); minor=0; patch=0 ;;
+  minor) minor=$((minor + 1)); patch=0 ;;
+  patch) patch=$((patch + 1)) ;;
+esac
+printf '%s.%s.%s' "$major" "$minor" "$patch" >VERSION
+echo "Bumped VERSION to $(cat VERSION)"
+"""
+
 [tasks.verify]
 description = "Full pipeline: format-check, lint, test, build, docs"
 depends = ["format-check", "lint", "test", "build", "docs"]
