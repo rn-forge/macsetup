@@ -101,6 +101,31 @@ The contents of file "${HOME}/.rn-forge/macsetup/config/shared/profile.zsh" shou
 The contents of file "${HOME}/.rn-forge/macsetup/config/hosts/testhost/Brewfile" should include '# published update'
 End
 
+It 'refuses to reset local changes without --force'
+printf '\n# local update\n' >>"${HOME}/.rn-forge/macsetup/config/shared/profile.zsh"
+When run script "${HOME}/.rn-forge/bin/rnfmac" config reset
+The status should be failure
+The error should include '--force'
+The output should include 'profile.zsh'
+The contents of file "${HOME}/.rn-forge/macsetup/config/shared/profile.zsh" should include '# local update'
+End
+
+It 'discards local changes with --force'
+printf '\n# local update\n' >>"${HOME}/.rn-forge/macsetup/config/shared/profile.zsh"
+printf 'brew "ripgrep"\n' >"${HOME}/.rn-forge/macsetup/config/hosts/testhost/Brewfile.new"
+When run script "${HOME}/.rn-forge/bin/rnfmac" config reset --force
+The status should be success
+The output should include 'macsetup config reset to origin/main'
+The contents of file "${HOME}/.rn-forge/macsetup/config/shared/profile.zsh" should not include '# local update'
+The path "${HOME}/.rn-forge/macsetup/config/hosts/testhost/Brewfile.new" should not be exist
+End
+
+It 'is a no-op when already clean'
+When run script "${HOME}/.rn-forge/bin/rnfmac" config reset
+The status should be success
+The output should include 'already clean'
+End
+
 It 'syncs over uncommitted config changes instead of failing'
 printf '\n# local update\n' >>"${HOME}/.rn-forge/macsetup/config/hosts/testhost/Brewfile"
 When run script "${HOME}/.rn-forge/bin/rnfmac" sync
