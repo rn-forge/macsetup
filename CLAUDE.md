@@ -1,61 +1,107 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for coding agents (Claude Code, Codex, and others — `AGENTS.md` points here) working in this repository.
 
-## Commands
+User-facing documentation lives in [README.md](README.md): what each `rnfmac` command does, the
+install/upgrade entry points and their flags, the `macsetup-config` layout, the Homebrew Remote
+Relay design and its env vars, and the full `mise run ...` task list. Read it for any of that
+instead of duplicating it here — this file covers only what an agent needs beyond it. Generated
+per-function API docs are in [`docs/`](docs/) and are never hand-edited.
 
-Tasks run via `mise`:
+## Repo map
 
-```sh
-mise run format        # format shell scripts with shfmt (in-place)
-mise run format-check  # dry-run format check (CI)
-mise run lint           # shellcheck all shell scripts
-mise run test            # run the shellspec suite (tests/)
-mise run docs            # regenerate docs/ from shdoc annotations in src/ — never hand-edit docs/
-mise run build            # generate dist/macsetup + dist/macsetup.tar.gz
-mise run verify           # format-check + lint + test + build + docs (full CI gate)
-mise run clean             # remove dist/
-```
+**macsetup** is a macOS system configuration toolkit (shell/Ruby/AWK) driven by one CLI, `rnfmac`.
+Everything under `src/` is the distribution payload; `scripts/build.sh` stages it into `dist/` and
+tarballs it for a GitHub Release.
 
-Required tool versions are pinned in `.mise.toml`: `shellcheck 0.11.0`, `shfmt 3.13.1` (`shellspec` is not pinned there — CI installs it via a direct curl install script, since mise has no shellspec plugin). `tests/` holds a `shellspec` suite (specs for install, upgrade, cleanup, profile sync, brew sync/relay, and the `rnfmac` dispatcher) run against a sandboxed `$HOME` with stubbed `curl`/`hostname` (`tests/spec_helper.sh`). `system/init.sh` and `system/sync.sh` have no specs by convention, not oversight: they talk to real Homebrew/oh-my-zsh/uv/nvm/SDKMAN installers over the network with no mockable seam, so that surface is verified manually instead.
+| Path | Role |
+|---|---|
+| `src/rnfmac.sh` | The dispatcher (see contract below) |
+| `src/install.sh` | Standalone sourceable installer, also a release asset |
+| `src/commands/` | Top-level sub-commands: `sync`, `doctor`, `version`, `upgrade`, `cleanup` |
+| `src/commands/<group>/` | Grouped sub-commands: `system/`, `profile/`, `brew/`, `config/` |
+| `src/completions/_rnfmac` | zsh completion; enumerates `commands/` at runtime |
+| `src/homebrew/` | Remote Relay patches + strategy class, mirroring Homebrew's layout |
+| `src/profiles/shared/` | Static assets sync installs: zsh theme, macOS keybindings |
+| `tests/` | shellspec suite, sandboxed `$HOME` (`tests/spec_helper.sh`) |
+| `scripts/build.sh` | dist staging + tarball |
 
-Coverage (`kcov`) is a macOS no-op (confirmed empirically — a script that visibly executes still reports 0% covered lines), so `mise run test`/`mise run verify` (macOS) never run it and there's no local coverage gate. The `sonar` job in `.github/workflows/main.yml` runs on `ubuntu-latest`, where kcov's line-tracing works, and is the one place coverage is generated: `shellspec --kcov tests/` produces `coverage/sonarqube.xml`, which `sonar-project.properties`' `sonar.coverage.reportPaths` feeds to the SonarCloud quality gate.
+**Dispatcher contract:** `rnfmac <sub-command> [args]` → `commands/<sub_command>.sh`, and
+`rnfmac <group> <sub-command> [args]` → `commands/<group>/<sub_command>.sh` when
+`commands/<group>/` is a directory. Dropping a script into `commands/` (or a new
+`commands/<group>/`) adds the sub-command *and* its completion — no registration anywhere.
+A `lib.sh` inside a group is shared-helper code, not a dispatchable sub-command.
 
-## Architecture
+**Runtime layout:** `~/.rn-forge` (`RNF_HOME`) is the shared home for the rn-forge product family.
+Products install to `~/.rn-forge/<product>/<version>/` with `current` → latest; `bin/` and
+`completions/` hold one symlink per product. Upgrade/rollback = flip `current`.
 
-This is **macsetup** — a macOS system configuration toolkit (shell/Ruby/AWK) driven by one CLI, `rnfmac`. Everything under `src/` is the distribution payload; `scripts/build.sh` stages it into `dist/` and tarballs it for a GitHub Release.
+**Machine config** lives in the external `macsetup-config` repo, cloned to the persistent
+`~/.rn-forge/macsetup/config/` (`CONFIG_HOME`) — outside any versioned `<version>/` dir, so
+upgrades never touch it.
 
-**Dispatcher contract:** `src/rnfmac.sh` maps `rnfmac <sub-command> [args]` → `commands/<sub_command>.sh`, and `rnfmac <group> <sub-command> [args]` → `commands/<group>/<sub_command>.sh` when `commands/<group>/` is a directory. Dropping a script into `commands/` (or a new `commands/<group>/`) adds the sub-command and its zsh completion (`completions/_rnfmac` enumerates the dir at runtime) — no registration anywhere. A `lib.sh` inside a group (e.g. `commands/profile/lib.sh`) is shared-helper code, not a dispatchable sub-command.
-
-**Top-level commands** (`src/commands/`):
-
-- `sync.sh` — the everyday command. Composes `profile/sync.sh` → `brew/sync.sh` → `system/sync.sh`, in that order (profile first so a new dist's Brewfile/pins apply before the rest runs). `RNFMAC_SYNC_PROFILES_ONLY=1` skips the brew/system steps.
-- `doctor.sh` — read-only health sweep: `system/doctor.sh` + `profile/check.sh` + `brew/diff.sh`. Exit 0 healthy, 1 if any group reports drift.
-- `version.sh` — prints the installed VERSION.
-- `upgrade.sh` — downloads the latest GitHub release tarball and installs it as a new version dir, flipping `current`.
-- `cleanup.sh` — deletes every installed version dir under `~/.rn-forge/macsetup/` except the one `current` points to (upgrade/install never prune old versions themselves, so this is the explicit opt-in to reclaim disk space).
-
-**Command groups:**
-
-- `system/` — `init.sh` (one-time bootstrap: Homebrew, oh-my-zsh + plugins, uv, nvm, SDKMAN, the Homebrew Remote Relay; `--force` reinstalls everything), `sync.sh` (installs every version listed in each runtime's `<runtime>-versions` file — see **Machine config** — via uv/nvm/SDKMAN; the first entry across shared+host is that runtime's default; a version with no match, or that fails to install, is logged and skipped rather than aborting the whole sync — the script still exits 1 if anything was skipped), `doctor.sh` (read-only toolchain health check — presence-only, e.g. checks `uv`/`nvm`/`sdkman` exist rather than diffing installed runtime versions against the pins; that's a deliberate scope call, not a gap to silently "fix").
-- `profile/` — `sync.sh` (renders shared+host `profile.zsh` into `~/.rn-forge/macsetup/profile.zsh`, patches `.zprofile`/`.zshrc`, backs up existing rc files first — `.zshrc`'s patch is inserted before the `source $ZSH/oh-my-zsh.sh` line specifically because `plugins=()` must be set before oh-my-zsh reads it, and non-login shells like a plain `zsh` or a tmux pane only source `.zshrc`, not `.zprofile`, so both rc files need their own copy of the block), `check.sh` (read-only: does the installed profile match what sync would render), `lib.sh` (shared rendering helpers, not a sub-command).
-- `brew/` — `sync.sh` (`brew bundle install` + `cleanup` against the host's `Brewfile`), `diff.sh` (read-only drift report; `--write` updates the Brewfile from installed state, requires a git checkout), `relay.sh` ((re)applies the Homebrew Remote Relay patches; `--force` resets+reapplies, `--reset` reverts to Homebrew's clean base, `--regen` regenerates the patch files themselves from a hand-edited clean-base Homebrew worktree — patches can't be authored by hand-editing diff hunks since valid ones need real context lines from Homebrew's current sources, which this repo doesn't vendor).
-- `config/` — `pull.sh` (fast-forward the persistent macsetup-config checkout onto `origin/main`, carrying any uncommitted local changes across on a stash rather than refusing them — see `lib.sh`'s `update_config_checkout`), `push.sh` (fast-forward, then commit and push local changes — `-m <message>` required), `status.sh` (read-only: identity, ahead/behind vs a freshly fetched origin, and the full local diff, including untracked files), `reset.sh` (hard-resets the checkout to `origin/main`, discarding local changes — refuses without `--force`, reporting what would be discarded), `lib.sh` (shared checkout helpers, not a sub-command).
-
-**Install/upgrade path:** `src/install.sh` is a standalone, sourceable installer (also published as a release asset) — `. <(curl -fsSL .../install.sh)` on a fresh machine (streaming: downloads the latest release tarball, verified against its `.sha256` sidecar when present), or `. src/install.sh` from a checkout/unpacked dist (in-path: installs straight from the sibling tree, no network round-trip for macsetup itself — detected via a sibling `rnfmac.sh` + `VERSION`), or `. install.sh --archive <path>` against a release tarball already on disk (archive: unpacks it to a temp dir and installs that; takes precedence over in-path detection, since an explicitly named payload must not be second-guessed). Either way the actual copy into `~/.rn-forge/macsetup/<version>/` is atomic (staged into a scratch dir, then `rm`+`mv` swapped into place) and serialized against concurrent installs via a `mkdir`-based lock, then `current` is symlinked and `bin/rnfmac` + `completions/_rnfmac` are linked in. It does not touch `.zprofile`/`.zshrc` or run bootstrap/sync — that's `rnfmac system init` / `rnfmac sync`. `commands/upgrade.sh` mirrors this hardening (atomic swap, checksum check) and takes the same `--archive <path>`, but has no in-path mode — it always operates on an already-installed instance, so its only two sources are the newest release or an explicit archive. Both entry points verify an archive against a sibling `<archive>.sha256` when one exists and warn when it doesn't. `--archive` is also the way to move to a *specific* build rather than whatever `latest` points at, so `upgrade --archive` can legitimately install an older version than the one installed — its log line is worded as a move, not an upgrade.
-
-**Runtime layout:** `~/.rn-forge` (`RNF_HOME`) is the shared home for the rn-forge product family. Products install to `~/.rn-forge/<product>/<version>/` with `current` → latest; `bin/` and `completions/` hold one symlink per product. Upgrade/rollback = flip `current`.
-
-**Machine config** lives in the external `macsetup-config` repo, cloned to the persistent `~/.rn-forge/macsetup/config/` (`CONFIG_HOME`, outside any versioned `<version>/` dir, so upgrades never touch it — see `commands/config/`). Layout: `shared/` (common `profile.zsh`, `aliases.zsh`, and the `<runtime>-versions` files below) and `hosts/<hostname>/` (host `profile.zsh`, `Brewfile`, and optional `<runtime>-versions` overrides). `profile/lib.sh`'s `render_profile_content` concatenates shared + host `profile.zsh` (host wins by coming last). `system/sync.sh`'s `read_runtime_versions` does the same for `java-versions`/`python-versions`/`node-versions` — one version spec per line, `#` comments — except it merges rather than overrides (shared entries plus any host-specific additions, deduped, order preserved) since installing multiple runtime versions side by side is the point; at least one of the shared or host file must exist per runtime, there is no hardcoded fallback pin in code. `src/profiles/shared/` (still in this repo, not macsetup-config) holds the static assets sync also installs: the custom zsh theme and macOS keybindings.
-
-**Homebrew Remote Relay** (`src/homebrew/` — mirrors Homebrew's internal layout) solves corporate network/Zscaler blocks. When `HOMEBREW_REMOTE_RELAY_ENABLED=1`, Homebrew downloads are proxied via SSH to `HOMEBREW_REMOTE_RELAY_HOST` (default: `rohitnarayanan@rohitmacmini.local`), which fetches the artifact and SCPs it back. `commands/brew/relay.sh` resets the local Homebrew install (`/opt/homebrew`, Apple Silicon only) to clean and re-applies the patches in `src/homebrew/patches/` fresh each time — patches are the single source of truth, nothing is cherry-picked from a stored commit.
-
-**Runtime dependency:** every script sources `~/.rn-forge/shkit/current/shkit.sh`, from the external `shkit` repo. It provides logging helpers (`log_info`, `log_success`, `log_warning`, `log_notice`, `log_verbose`, `print_vars`). It is not vendored here; `install.sh` is the only place that installs it (curls shkit's own installer — not `source.sh` — or set `RNF_SHKIT_INSTALL_BUNDLE` to a local tarball path on a blocked network to skip that curl). Every other script assumes it's already present and sources it directly by absolute path — no `PATH` dependency; wiring `~/.rn-forge/bin` onto `PATH` is a separate concern owned by the shell profile.
+**Runtime dependency:** every script sources `~/.rn-forge/shkit/current/shkit.sh` from the external
+`shkit` repo (`log_info`, `log_success`, `log_warning`, `log_notice`, `log_error`, `log_verbose`,
+`print_vars`). It is not vendored; `install.sh` is the only place that installs it (curling shkit's
+own installer — not `source.sh` — or `RNF_SHKIT_INSTALL_BUNDLE` pointing at a local tarball on a
+blocked network). Every other script assumes it's present and sources it by absolute path — no
+`PATH` dependency; wiring `~/.rn-forge/bin` onto `PATH` is owned by the shell profile.
 
 ## Code style
 
 - 2-space indentation, LF line endings (enforced by `.editorconfig` and `shfmt`)
 - `shellcheck` with SC1090/SC1091 suppressed (dynamic `source` paths — see `.shellcheckrc`)
-- Scripts use `#!/bin/zsh` with `# shellcheck shell=bash` — keep new code bash-parseable (no zsh-only expansions) so shellcheck/shfmt can process it; `src/completions/_rnfmac` is the zsh-only exception, excluded from both tools
-- Functions are documented with `shdoc` `# @description`/`@arg`/`@stdout`/`@exitcode` annotations (`mise run docs` renders them into `docs/`) — never hand-edit files under `docs/`, they're generated
-- A file sourced (not executed) must define constants and read `$0` at the top level, never inside a function — under zsh, `readonly`/plain assignments made inside a function that's later `source`d become function-local and vanish once the function returns (`src/install.sh`'s `SELF_PATH` capture is why it sources `shkit` before defining `rnfmac_install()`, not after)
+- Scripts use `#!/bin/zsh` with `# shellcheck shell=bash` — keep new code bash-parseable (no
+  zsh-only expansions) so shellcheck/shfmt can process it; `src/completions/_rnfmac` is the
+  zsh-only exception, excluded from both tools
+- Every function carries `shdoc` `# @description`/`@arg`/`@stdout`/`@exitcode` annotations;
+  `mise run docs` renders them into `docs/`
+- Dispatchable scripts end with `${__SOURCED__:+return}` before calling `execute` — that guard is
+  what lets shellspec source them without running them
+
+## Invariants and gotchas
+
+These are the decisions that look like bugs or gaps but aren't. Don't "fix" them without asking.
+
+- **A sourced file must define constants and read `$0` at the top level**, never inside a function.
+  Under zsh, `readonly`/plain assignments made inside a function that's later `source`d become
+  function-local and vanish on return. `src/install.sh` sources shkit *before* defining
+  `rnfmac_install()` for exactly this reason.
+- **`system/doctor.sh` is presence-only** — it checks that `uv`/`nvm`/`sdkman` exist rather than
+  diffing installed runtime versions against the configured ones. Deliberate scope call.
+- **`system/sync.sh` skips rather than aborts.** A runtime version with no match, or one that fails
+  to install, is logged and skipped so the rest of the sync still runs; the script exits 1 at the
+  end if anything was skipped. There is no hardcoded fallback pin in code — at least one of the
+  shared or host `<runtime>-versions` file must exist per runtime.
+- **`profile/sync.sh` patches `.zshrc` *before* its `source $ZSH/oh-my-zsh.sh` line**, because
+  `plugins=()` must be set before oh-my-zsh reads it. Both `.zprofile` and `.zshrc` get their own
+  copy of the block: non-login shells (a plain `zsh`, a tmux pane) source only `.zshrc`.
+- **`sync.sh` runs `config/pull.sh` first**, so a freshly pulled Brewfile/version pins apply before
+  the rest. If the config checkout was *absent* it bootstraps it and stops without applying — that
+  preserves the contract that an upgrade never applies configuration.
+- **Relay patches are the single source of truth.** `brew/relay.sh` resets `/opt/homebrew` to clean
+  and re-applies `src/homebrew/patches/` fresh every time; nothing is cherry-picked from a stored
+  commit. Patches can't be authored by hand-editing diff hunks — valid ones need real context lines
+  from Homebrew's current sources, which this repo doesn't vendor. That's what `--regen` is for.
+- **`config/pull.sh` carries uncommitted local changes across on a stash** rather than refusing
+  them (see `config/lib.sh`'s `update_config_checkout`).
+- **`upgrade --archive` can legitimately install an older version** than the one installed, so its
+  log line is worded as a move, not an upgrade.
+- **Install and upgrade are atomic and locked** — staged into a scratch dir, then `rm`+`mv` swapped
+  into place, serialized via a `mkdir`-based lock. Archives are verified against a sibling
+  `<archive>.sha256` when present, with a warning when not. Keep both paths in step.
+
+## Testing and CI
+
+`mise run test` runs the shellspec suite against a sandboxed `$HOME` with stubbed `curl`/`hostname`.
+`mise run verify` is the full local gate (see README's Development section for the task list).
+
+- **`system/init.sh` and `system/sync.sh` have no specs by convention, not oversight** — they drive
+  real Homebrew/oh-my-zsh/uv/nvm/SDKMAN installers over the network with no mockable seam. That
+  surface is verified manually.
+- **Coverage is Linux-only.** kcov's line-tracing is a no-op on macOS (confirmed empirically — a
+  script that visibly executes still reports 0% covered), so `mise run test`/`verify` never invoke
+  it and there is no local coverage gate. The `sonar` job in `.github/workflows/main.yml` runs on
+  `ubuntu-22.04` (kcov isn't packaged for noble) and is the one place coverage is generated:
+  `shellspec --kcov tests/` produces `coverage/sonarqube.xml`, fed to the SonarCloud quality gate
+  via `sonar-project.properties`' `sonar.coverage.reportPaths`.

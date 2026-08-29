@@ -10,9 +10,9 @@ Pure shell/Ruby/AWK — no build system beyond [`mise`](https://mise.jdx.dev) fo
 | --- | --- |
 | Package manager | Homebrew, with per-machine `Brewfile`s from `macsetup-config` (`brew bundle install` + `cleanup`) |
 | Shell | oh-my-zsh + `zsh-completions`, `zsh-autosuggestions`, `zsh-syntax-highlighting`, custom theme |
-| Python | [uv](https://docs.astral.sh/uv/) (pinned to Python 3.15) |
-| Node.js | [nvm](https://github.com/nvm-sh/nvm) (latest LTS) |
-| Java | [SDKMAN](https://sdkman.io) (Temurin 21) |
+| Python | [uv](https://docs.astral.sh/uv/), versions from `python-versions` in `macsetup-config` |
+| Node.js | [nvm](https://github.com/nvm-sh/nvm), versions from `node-versions` |
+| Java | [SDKMAN](https://sdkman.io) (Temurin), versions from `java-versions` |
 | Dotfiles | Rendered profile + rc-file patches, symlinked into `~/.rn-forge/` |
 | macOS keybindings | `DefaultKeyBinding.dict` copied into `~/Library/KeyBindings/` |
 | Restricted networks | Homebrew Remote Relay (SSH-proxied downloads) |
@@ -33,6 +33,14 @@ From a git checkout or unpacked release dist:
 . src/install.sh
 ```
 
+From a release tarball already on disk (e.g. on a network that blocks the download):
+
+```sh
+. install.sh --archive ~/Downloads/macsetup.tar.gz
+```
+
+`--archive` takes precedence over the checkout detection. Archives are verified against a sibling `<archive>.sha256` when one is present, and a warning is printed when it isn't.
+
 Either way this installs into `~/.rn-forge/macsetup/<version>/`, clones `macsetup-config` into `~/.rn-forge/macsetup/config`, symlinks `current`, links `rnfmac` + its zsh completion into `~/.rn-forge/bin` / `~/.rn-forge/completions`, and exports `PATH` for the current shell. Add the `PATH` export to `~/.zprofile` to persist it. Set `RNFMAC_CONFIG_REPO_URL` before installation to override the default `https://github.com/rn-forge/macsetup-config.git`. It does **not** touch shell rc files or apply configuration — that's the next two steps.
 
 ### 2. Bootstrap a brand-new Mac (run once, as local admin)
@@ -51,10 +59,10 @@ rnfmac sync
 
 Composes four steps, in order:
 
-1. **`rnfmac config pull`** — fast-forwards the persistent `macsetup-config` checkout from `origin/main`.
+1. **`rnfmac config pull`** — fast-forwards the persistent `macsetup-config` checkout from `origin/main` (carrying any uncommitted local changes across). Config comes first so a freshly pulled `Brewfile` and version pins apply to the steps below. If the checkout was *absent*, `sync` bootstraps it and stops there without applying it — clone the config, review it, then rerun `rnfmac sync`.
 2. **`rnfmac profile sync`** — renders shared + host `profile.zsh` into `~/.rn-forge/macsetup/profile.zsh`, patches `.zprofile`/`.zshrc` to source it (existing rc files are backed up first), installs the custom zsh theme and macOS keybindings.
 3. **`rnfmac brew sync`** — `brew bundle install` and `brew bundle cleanup` against the machine's `Brewfile`, so the installed set exactly matches the profile.
-4. **`rnfmac system sync`** — installs the pinned runtimes: Python 3.15 (uv), Node LTS (nvm), Java 21 Temurin (SDKMAN).
+4. **`rnfmac system sync`** — installs every version listed in each runtime's `<runtime>-versions` file (uv for Python, nvm for Node, SDKMAN for Java). The first entry across shared + host is that runtime's default. A version that can't be resolved or fails to install is logged and skipped so the rest of the sync still runs; the step exits non-zero at the end if anything was skipped.
 
 ### Other commands
 
@@ -62,6 +70,7 @@ Composes four steps, in order:
 rnfmac doctor           # read-only health sweep across system/profile/brew — exit 1 if anything's drifted
 rnfmac version          # print the installed version
 rnfmac upgrade          # install the latest release and pull config, without applying sync
+rnfmac upgrade --archive <path>  # move to a specific build from a tarball on disk (may be older)
 rnfmac cleanup          # delete every installed version except the one `current` points to
 rnfmac system doctor    # read-only toolchain health check (Homebrew, oh-my-zsh, uv, nvm, SDKMAN presence)
 rnfmac profile check    # does the installed profile match what sync would render?
@@ -69,7 +78,8 @@ rnfmac brew diff        # drift between installed packages and the Brewfile (--w
 rnfmac config status    # show config branch, revision, and local changes
 rnfmac config pull      # clone config if absent, otherwise fast-forward origin/main
 rnfmac config push -m "Update host config" # commit and publish config changes
-rnfmac brew relay       # (re)apply the Homebrew Remote Relay patches
+rnfmac config reset --force # discard local config changes, hard-reset to origin/main
+rnfmac brew relay       # (re)apply the Homebrew Remote Relay patches (--force resets first, --reset reverts to clean, --regen regenerates the patch files)
 rnfmac --help           # list all sub-commands and groups
 ```
 
@@ -81,19 +91,27 @@ The changing shell and Homebrew configuration lives in a separate `rn-forge/macs
 macsetup-config/
 ├── shared/                 # common to all machines
 │   ├── profile.zsh         #   shell env: homebrew, oh-my-zsh, uv, nvm, sdkman
-│   └── aliases.zsh         #   shared aliases/functions
+│   ├── aliases.zsh         #   shared aliases/functions
+│   ├── python-versions     #   one version spec per line, `#` comments
+│   ├── node-versions
+│   └── java-versions
 └── hosts/
     ├── rohitmacbook/       # one directory per machine
     │   ├── profile.zsh     #   machine-specific env vars / overrides
-    │   └── Brewfile        #   machine-specific package set
+    │   ├── Brewfile        #   machine-specific package set
+    │   └── *-versions      #   optional extra runtime versions for this host
     └── rohitmacmini/
 ```
 
 At sync time, shared `profile.zsh` is rendered first, then the machine's — host settings win by coming last, all concatenated into one file that `rnfmac profile sync` sources from the shell rc.
 
+The `<runtime>-versions` files **merge** rather than override: the host's entries are added to the shared ones (deduped, order preserved), since installing several versions of a runtime side by side is the point. The first entry across shared + host becomes that runtime's default. At least one of the two files must exist per runtime — there is no fallback pin in the code.
+
 **To add a new machine:** create `hosts/<hostname>/` in `macsetup-config` with a `profile.zsh` and a `Brewfile`, publish it, then run `rnfmac sync` on that machine.
 
-`rnfmac brew diff --write` writes into the current host's config checkout. Review the diff, then publish it explicitly with `rnfmac config push -m "..."`. Pulls use `--ff-only` and refuse local changes; they never merge, rebase, or overwrite edits.
+`rnfmac brew diff --write` writes into the current host's config checkout. Review the diff, then publish it explicitly with `rnfmac config push -m "..."`.
+
+Pulls are `--ff-only` — they never merge, rebase, or overwrite published history. Uncommitted local edits are *not* refused: they're carried across the update on a stash and popped afterwards, so a `pull` never silently discards work. If the checkout has diverged, or the stash pops with a conflict, the pull fails loudly. `rnfmac config reset --force` is the only command that discards local changes, and it refuses to run without `--force`, reporting what would be lost.
 
 ## Homebrew Remote Relay
 
@@ -135,7 +153,7 @@ src/
 │   ├── cleanup.sh                   # deletes old versions, keeps `current`
 │   ├── system/                      # init.sh (bootstrap), sync.sh (runtimes), doctor.sh
 │   ├── profile/                     # sync.sh, check.sh, lib.sh (shared helpers)
-│   ├── config/                      # pull.sh, status.sh, push.sh, lib.sh
+│   ├── config/                      # pull.sh, push.sh, status.sh, reset.sh, lib.sh
 │   └── brew/                        # sync.sh, diff.sh, relay.sh
 ├── completions/_rnfmac              # zsh completion, enumerates commands/ at runtime
 ├── homebrew/                        # Remote Relay patches + strategy class
@@ -159,10 +177,11 @@ mise run docs          # regenerate docs/ from shdoc annotations in src/ — nev
 mise run build         # stage dist/macsetup and build the release tarball
 mise run verify        # format-check + lint + test + build + docs (full CI gate)
 mise run clean         # remove dist/
+mise run bump <patch|minor|major>  # write a new VERSION — review and commit yourself
 ```
 
 `tests/` holds a [`shellspec`](https://github.com/shellspec/shellspec) suite covering install, upgrade, cleanup, sync, and the profile/brew/relay commands, each run against a sandboxed `$HOME` (see `tests/spec_helper.sh`). `system/init.sh` and `system/sync.sh` are untested by design — they drive real Homebrew/oh-my-zsh/uv/nvm/SDKMAN installers with no mockable seam, so that surface gets manual verification instead. `shellspec` isn't in `.mise.toml`'s tool pins (no mise plugin for it); install it separately, or let CI curl it.
 
-No code-coverage gate: `kcov`'s bash/zsh line-tracing doesn't actually work on macOS (it runs and reports 0% covered on scripts that visibly executed), so this repo doesn't attempt one.
+No local coverage gate: `kcov`'s line-tracing is a no-op on macOS (it runs and reports 0% covered on scripts that visibly executed), so `mise run test`/`verify` don't invoke it. Coverage is generated in CI only — the `sonar` job runs on `ubuntu-22.04`, where `shellspec --kcov tests/` produces `coverage/sonarqube.xml` for the SonarCloud quality gate.
 
 Code style: 2-space indent, LF line endings (enforced by `.editorconfig` and `shfmt`); scripts use `#!/bin/zsh` with `# shellcheck shell=bash` (kept bash-parseable so shellcheck/shfmt can process it); shellcheck runs with SC1090/SC1091 suppressed for dynamic `source` paths (see `.shellcheckrc`).
