@@ -55,12 +55,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install mise tools
+        uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2
+
       - name: Install ShellSpec
         run: |
           curl -fsSL --proto '=https' --tlsv1.2 -o /tmp/shellspec-install.sh \
             https://raw.githubusercontent.com/shellspec/shellspec/f2d13f991885ef44e6b54e571e0842222251b111/install.sh
           echo "4cac73d958d1ca8c502f3aff1a3b3cfa46ab0062f81f1cc522b83b7b2b302175  /tmp/shellspec-install.sh" | sha256sum -c -
           sh /tmp/shellspec-install.sh --yes
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Install kcov and zsh
         run: sudo apt-get update && sudo apt-get install -y kcov zsh
@@ -68,7 +72,7 @@ jobs:
       # kcov's line-tracing only works on Linux (a no-op on macOS, where `verify` runs) —
       # this is the one place coverage data is generated, feeding sonar.coverage.reportPaths.
       - name: Run tests with coverage
-        run: "$HOME/.local/bin/shellspec --kcov tests/"
+        run: mise run test-coverage
 
       - uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8.2.1
         env:

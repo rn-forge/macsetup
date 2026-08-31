@@ -5,7 +5,7 @@
 # @description
 #   Report drift between installed Homebrew packages and the host Brewfile.
 #   --write updates the Brewfile in the persistent macsetup-config checkout.
-#   Exit 0 no drift, 1 drift/problems found.
+#   Exit 0 no drift, 2 drift, or 1 structural error.
 # Version: 1.0
 # Author: Rohit Narayanan
 
@@ -17,6 +17,9 @@ source "${RNF_HOME}/shkit/current/shkit.sh"
 PRODUCT_HOME="${RNF_HOME}/macsetup"
 HOST_NAME="$(hostname | tr '[:upper:]' '[:lower:]' | cut -d. -f1)"
 BREWFILE="${PRODUCT_HOME}/config/hosts/${HOST_NAME}/Brewfile"
+SELF_PATH="$(readlink -f "$0")"
+source "$(dirname "$(dirname "${SELF_PATH}")")/lib/report.sh"
+export REPORT_GROUP="brew"
 WRITE_FLAG=0
 
 # =============================================================================
@@ -27,27 +30,35 @@ WRITE_FLAG=0
 # @noargs
 # @stdout The usage text.
 function usage() {
-  echo "usage: rnfmac brew diff [--write]"
+  echo "usage: rnfmac brew diff [--write] [--all] [--json]"
 }
 
-# @description Parse CLI args, setting `WRITE_FLAG` and handling `-h`/`--help`.
-# @arg $1 string Optional flag: `--write`, `-h`/`--help`/`help`, or empty.
+# @description Parse CLI args, setting report flags and `WRITE_FLAG`.
+# @arg $@ string Flags: `--write`, `--all`, `--json`, `-h`/`--help`/`help`.
 # @set WRITE_FLAG Set to 1 if `--write` was passed.
+# @set RNFMAC_REPORT_ALL Set to 1 when `--all` is passed.
+# @set RNFMAC_REPORT_FORMAT Set to `json` when `--json` is passed.
 # @exitcode 0 Parsed successfully, or help was requested (also exits the script).
 # @exitcode 1 Unrecognized argument.
 function parse_args() {
-  case "${1:-}" in
-  --write) WRITE_FLAG=1 ;;
-  "") ;;
-  -h | --help | help)
-    usage
-    exit 0
-    ;;
-  *)
-    usage >&2
-    exit 1
-    ;;
-  esac
+  local arg
+  while [[ $# -gt 0 ]]; do
+    arg="$1"
+    case "${arg}" in
+    --write) WRITE_FLAG=1 ;;
+    --all) export RNFMAC_REPORT_ALL=1 ;;
+    --json) export RNFMAC_REPORT_FORMAT=json ;;
+    -h | --help | help)
+      usage
+      exit 0
+      ;;
+    *)
+      usage >&2
+      exit 1
+      ;;
+    esac
+    shift
+  done
 }
 
 # =============================================================================
@@ -56,13 +67,15 @@ function parse_args() {
 
 # @description Report drift between installed Homebrew packages and `BREWFILE`.
 # @noargs
-# @exitcode 0 No drift.
-# @exitcode 1 Drift detected.
 function report_diff() {
-  log_verbose "Checking brew bundle drift against ${BREWFILE} ..."
   local missing=0 extra=0
 
-  if ! brew bundle check --file="${BREWFILE}" --verbose; then
+  if [[ "${RNFMAC_REPORT_FORMAT:-human}" = "human" ]]; then
+    log_verbose "Checking brew bundle drift against ${BREWFILE} ..."
+    if ! brew bundle check --file="${BREWFILE}" --verbose; then
+      missing=1
+    fi
+  elif ! brew bundle check --file="${BREWFILE}" --verbose >/dev/null; then
     missing=1
   fi
 
@@ -70,17 +83,19 @@ function report_diff() {
   extras="$(brew bundle cleanup --file="${BREWFILE}" 2>/dev/null | sed '/^Would `brew cleanup`:$/,$d')" || true
   if [[ -n "${extras}" ]]; then
     extra=1
-    log_warning "installed but not in Brewfile:"
-    echo "${extras}"
+    report_add "drift" "packages" "brewfile-extra" "installed but not in Brewfile:
+${extras}"
   fi
 
   if [[ "${missing}" -eq 0 ]] && [[ "${extra}" -eq 0 ]]; then
-    log_success "no drift — installed packages match the Brewfile"
+    report_add "ok" "packages" "brewfile" "no drift — installed packages match the Brewfile"
     return 0
   fi
 
-  log_warning "drift detected between installed packages and the Brewfile"
-  return 1
+  if [[ "${missing}" -eq 1 ]]; then
+    report_add "drift" "packages" "brewfile-missing" "packages from the Brewfile are missing — run 'rnfmac brew sync'"
+  fi
+  return 0
 }
 
 # @description Dump installed Homebrew package state to the host's Brewfile.
@@ -102,29 +117,9 @@ function write_brewfile() {
   log_verbose "Dropping dependency-only formulae (keeping only explicitly requested ones) ..."
   local leaves
   leaves="$(brew leaves --installed-on-request)"
-  LEAVES="${leaves}" awk '
-    BEGIN {
-      n = split(ENVIRON["LEAVES"], arr, "\n"); for (i = 1; i <= n; i++) requested[arr[i]] = 1
-      header["tap"] = "## taps"; header["brew"] = "## formulae"; header["cask"] = "## casks"
-    }
-    /^#/ { pending = $0; next }
-    /^brew "/ {
-      name = $0
-      sub(/^brew "/, "", name)
-      sub(/".*/, "", name)
-      if (!(name in requested)) { pending = ""; next }
-    }
-    {
-      if ($1 != last_type) {
-        if (last_type != "") print ""
-        if ($1 in header) print header[$1]
-        last_type = $1
-      }
-      if (pending != "") print pending
-      pending = ""
-      print
-    }
-  ' "${target}" >"${target}.tmp" && mv "${target}.tmp" "${target}"
+  local lib_dir
+  lib_dir="$(dirname "$(dirname "${SELF_PATH}")")/lib"
+  LEAVES="${leaves}" awk -f "${lib_dir}/dedupe-brewfile.awk" "${target}" >"${target}.tmp" && mv "${target}.tmp" "${target}"
 
   log_success "Brewfile updated at ${target}"
 }
@@ -145,3 +140,8 @@ ${__SOURCED__:+return} # shellspec Include guard
 
 parse_args "$@"
 execute
+if [[ "${WRITE_FLAG}" -eq 1 ]]; then
+  exit 0
+fi
+report_render
+exit "$(report_exit_code)"

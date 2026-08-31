@@ -1,6 +1,7 @@
 [tools]
 shellcheck = "0.11.0"
 shfmt = "3.13.1"
+uv = "0.12.7"
 
 [tasks.format]
 description = "Format all shell scripts with shfmt"
@@ -18,21 +19,29 @@ run = "shellcheck $(find src scripts -name '*.sh' | sort)"
 description = "Run the ShellSpec suite (shell fixed to zsh via .shellspec)"
 run = "shellspec tests/"
 
+[tasks.test-coverage]
+description = "Run the ShellSpec suite under kcov, producing coverage/sonarqube.xml (Linux only — kcov's line tracing is a no-op on macOS)"
+run = "shellspec --kcov tests/"
+
 [tasks.build]
 description = "Generate the dist/macsetup tree and dist/macsetup.tar.gz release tarball"
 run = "bash scripts/build.sh"
 
 [tasks.docs]
-description = "Generate markdown docs from shdoc annotations under src/"
-run = """
-mkdir -p docs
-for f in $(find src -name '*.sh' | sort); do
-  rel="${f#src/}"
-  out="docs/${rel%.sh}.md"
-  mkdir -p "$(dirname "$out")"
-  gawk -f scripts/shdoc <"$f" >"$out"
-done
-"""
+description = "Generate shell reference docs from shdoc annotations under src/"
+run = "bash scripts/gen-docs.sh"
+
+[tasks.docs-site]
+description = "Build the MkDocs site into site/, or the given dir (strict — broken links fail the build)"
+depends = ["docs"]
+usage = '''
+arg "[site_dir]" default=".docs-site" help="Directory to build the site into"
+'''
+run = "uv run --with mkdocs-material mkdocs build --strict --site-dir \"${usage_site_dir}\""
+
+[tasks.docs-serve]
+description = "Serve the docs site locally with live reload on http://127.0.0.1:8082"
+run = "uv run --with mkdocs-material mkdocs serve -a 0.0.0.0:8082"
 
 [tasks.clean]
 description = "Remove generated dist/ artifacts"
@@ -57,5 +66,5 @@ echo "Bumped VERSION to $(cat VERSION)"
 """
 
 [tasks.verify]
-description = "Full pipeline: format-check, lint, test, build, docs"
-depends = ["format-check", "lint", "test", "build", "docs"]
+description = "Full pipeline: format-check, lint, test, build, docs, docs-site"
+depends = ["format-check", "lint", "test", "build", "docs", "docs-site"]

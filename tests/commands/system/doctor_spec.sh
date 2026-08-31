@@ -41,10 +41,21 @@ STUB
   return 0
 }
 
-It 'reports a healthy toolchain (clean Homebrew base)'
+It 'hides healthy records by default'
 install_dist_from_checkout
 stub_healthy_toolchain
 When run script "${HOME}/.rn-forge/bin/rnfmac" system doctor
+The status should be success
+The output should not include 'Homebrew 4.1.0'
+The output should not include 'nvm present'
+The output should not include 'macsetup current ->'
+The output should include '13 ok, 0 warning, 0 drift, 0 error'
+End
+
+It '--all includes healthy records'
+install_dist_from_checkout
+stub_healthy_toolchain
+When run script "${HOME}/.rn-forge/bin/rnfmac" system doctor --all
 The status should be success
 The output should include 'Homebrew 4.1.0'
 The output should include "oh-my-zsh plugin 'zsh-completions' present"
@@ -57,26 +68,43 @@ The output should include 'bin/rnfmac linked'
 The output should include 'completions/_rnfmac linked'
 The output should include 'shkit installed and sourceable'
 The output should include 'Homebrew is on a clean base'
-The output should include 'system doctor passed'
 End
 
-It 'reports a relay-patched Homebrew'
+It 'exits 2 when configured state has drifted'
+install_dist_from_checkout
+stub_healthy_toolchain
+rm -rf "${HOME}/.nvm"
+When run script "${HOME}/.rn-forge/bin/rnfmac" system doctor
+The status should eq 2
+The output should include 'nvm not found'
+The output should include '12 ok, 0 warning, 1 drift, 0 error'
+End
+
+It 'exits 1 when shkit is missing from the runtime layout'
+stub_healthy_toolchain
+write_unit_driver "system/doctor.sh" \
+  'rm -f "${RNF_HOME}/shkit/current/shkit.sh"' \
+  'execute' \
+  'report_render' \
+  'exit "$(report_exit_code)"'
+When run script "${DRIVER}"
+The status should eq 1
+The error should include 'shkit not found at'
+The output should include '9 ok, 0 warning, 1 drift, 3 error'
+End
+
+It 'reports a relay-patched Homebrew with --all'
 install_dist_from_checkout
 stub_healthy_toolchain
 git -C "${SANDBOX}/homebrew-test" commit -q --allow-empty -m 'rn-forge: apply Homebrew remote relay'
-When run script "${HOME}/.rn-forge/bin/rnfmac" system doctor
+When run script "${HOME}/.rn-forge/bin/rnfmac" system doctor --all
 The status should be success
 The output should include 'Homebrew is patched with the remote relay'
 End
 
-It 'reports every missing tool and broken layout entry'
-mask_real_toolchain
-When run script "${CHECKOUT}/src/commands/system/doctor.sh"
-The status should be failure
-The output should include 'homebrew not found'
-The output should include 'nvm not found'
-The output should include 'sdkman not found'
-The output should include "current' symlink missing or broken"
-The output should include 'bin/rnfmac missing or broken'
+It 'prints usage for --help'
+When run script "${CHECKOUT}/src/commands/system/doctor.sh" --help
+The status should be success
+The output should include 'usage: rnfmac system doctor [--all] [--json]'
 End
 End

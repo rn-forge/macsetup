@@ -1,9 +1,19 @@
 # system files
 .DS_Store
 
-
-# generated artifacts
+# generated folders
 dist/
-
-# sonar-cleanup scratch space
+docs/reference/
+.docs-site/
 .sonar-cleanup/
+
+# BEGIN rn-forge agentkit
+.rn-forge/agentkit/*/rendered/
+.rn-forge/agentkit/*/hooks/
+.rn-forge/agentkit/_common/
+.rn-forge/agentkit/state.json
+.rn-forge/agentkit/backups/
+# END rn-forge agentkit
+
+# local settings
+.claude/settings.local.json

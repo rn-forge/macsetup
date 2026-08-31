@@ -25,10 +25,11 @@ FORCE_FLAG=0
 # @set FORCE_FLAG Set to 1 if `--force` was passed.
 # @exitcode 1 An unrecognized argument was passed.
 function parse_args() {
+  local arg="${1:-}"
   if [[ $# -eq 0 ]]; then
     return 0
   fi
-  if [[ $# -eq 1 ]] && [[ "$1" == "--force" ]]; then
+  if [[ $# -eq 1 ]] && [[ "${arg}" == "--force" ]]; then
     FORCE_FLAG=1
     return 0
   fi
