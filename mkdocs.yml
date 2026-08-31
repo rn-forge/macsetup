@@ -1,0 +1,44 @@
+site_name: MacSetup Documentation
+site_description: Architecture, usage, development, and shell reference for macsetup.
+docs_dir: docs
+site_dir: site
+strict: true
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+nav:
+  - Home: index.md
+  - Architecture:
+      - Runtime layout: architecture/runtime-layout.md
+      - Remote Relay: architecture/remote-relay.md
+      - Configuration model: architecture/config-model.md
+      - Documentation system: architecture/docs-system.md
+  - Guides:
+      - Commands: guides/commands.md
+      - Development: guides/development.md
+  - Reference:
+      - Shell API: reference/index.md
+  - Plans:
+      - Agentkit alignment: specs/agentkit-alignment.md
+plugins:
+  - search
+markdown_extensions:
+  - admonition
+  - attr_list
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences

@@ -3,7 +3,7 @@
 # @file doctor.sh
 # @brief `rnfmac system doctor` — read-only toolchain health check.
 # @description
-#   Read-only health report for machine toolchain state. Exit 0 healthy, 1 problems found.
+#   Read-only structured health report for machine toolchain state.
 # Version: 1.0
 # Author: Rohit Narayanan
 
@@ -12,19 +12,42 @@ set -eo pipefail
 RNF_HOME="${HOME}/.rn-forge"
 source "${RNF_HOME}/shkit/current/shkit.sh"
 
-PROBLEMS=0
+SELF_PATH="$(readlink -f "$0")"
+source "$(dirname "$(dirname "${SELF_PATH}")")/lib/report.sh"
+export REPORT_GROUP="system"
 
 # =============================================================================
 # Helper functions
 # =============================================================================
 
-# @description Log a warning and mark the run as having found a problem.
-# @arg $1 string The warning message.
-# @set PROBLEMS Set to 1.
-function report_problem() {
-  local message="$1"
-  log_warning "${message}"
-  PROBLEMS=1
+# @description Print `rnfmac system doctor` usage.
+# @stdout The usage text.
+function usage() {
+  echo "usage: rnfmac system doctor [--all] [--json]"
+}
+
+# @description Parse reporting and help flags.
+# @arg $@ string Flags: `--all`, `--json`, `-h`/`--help`/`help`.
+# @set RNFMAC_REPORT_ALL Set to 1 when `--all` is passed.
+# @set RNFMAC_REPORT_FORMAT Set to `json` when `--json` is passed.
+# @exitcode 0 Parsed successfully, or help was requested.
+# @exitcode 1 An argument was unrecognized.
+function parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    --all) export RNFMAC_REPORT_ALL=1 ;;
+    --json) export RNFMAC_REPORT_FORMAT=json ;;
+    -h | --help | help)
+      usage
+      exit 0
+      ;;
+    *)
+      usage >&2
+      exit 1
+      ;;
+    esac
+    shift
+  done
 }
 
 # =============================================================================
@@ -35,18 +58,18 @@ function report_problem() {
 # @noargs
 function check_homebrew() {
   if command -v brew >/dev/null 2>&1; then
-    log_success "$(brew --version | head -1)"
+    report_add "ok" "toolchain" "homebrew" "$(brew --version | head -1)"
   else
-    report_problem "homebrew not found — run 'rnfmac system init'"
+    report_add "error" "toolchain" "homebrew" "homebrew not found — run 'rnfmac system init'"
     return
   fi
 
   local plugin
   for plugin in zsh-completions zsh-autosuggestions zsh-syntax-highlighting; do
     if [[ -d "${ZSH_CUSTOM:-${HOME}/.oh-my-zsh/custom}/plugins/${plugin}" ]]; then
-      log_success "oh-my-zsh plugin '${plugin}' present"
+      report_add "ok" "toolchain" "omz-plugin" "oh-my-zsh plugin '${plugin}' present"
     else
-      report_problem "oh-my-zsh plugin '${plugin}' missing — run 'rnfmac system init'"
+      report_add "drift" "toolchain" "omz-plugin" "oh-my-zsh plugin '${plugin}' missing — run 'rnfmac system init'"
     fi
   done
 }
@@ -55,9 +78,9 @@ function check_homebrew() {
 # @noargs
 function check_ohmyzsh() {
   if [[ -d "${HOME}/.oh-my-zsh" ]]; then
-    log_success "oh-my-zsh present"
+    report_add "ok" "toolchain" "oh-my-zsh" "oh-my-zsh present"
   else
-    report_problem "oh-my-zsh not found — run 'rnfmac system init'"
+    report_add "drift" "toolchain" "oh-my-zsh" "oh-my-zsh not found — run 'rnfmac system init'"
   fi
 }
 
@@ -65,21 +88,21 @@ function check_ohmyzsh() {
 # @noargs
 function check_runtime_managers() {
   if command -v uv >/dev/null 2>&1; then
-    log_success "$(uv --version)"
+    report_add "ok" "toolchain" "uv" "$(uv --version)"
   else
-    report_problem "uv not found — run 'rnfmac system init'"
+    report_add "drift" "toolchain" "uv" "uv not found — run 'rnfmac system init'"
   fi
 
   if [[ -d "${HOME}/.nvm" ]]; then
-    log_success "nvm present"
+    report_add "ok" "toolchain" "nvm" "nvm present"
   else
-    report_problem "nvm not found — run 'rnfmac system init'"
+    report_add "drift" "toolchain" "nvm" "nvm not found — run 'rnfmac system init'"
   fi
 
   if [[ -f "${HOME}/.sdkman/bin/sdkman-init.sh" ]]; then
-    log_success "sdkman present"
+    report_add "ok" "toolchain" "sdkman" "sdkman present"
   else
-    report_problem "sdkman not found — run 'rnfmac system init'"
+    report_add "drift" "toolchain" "sdkman" "sdkman not found — run 'rnfmac system init'"
   fi
 }
 
@@ -90,27 +113,27 @@ function check_rn_forge_layout() {
   local product_home="${RNF_HOME}/macsetup"
 
   if [[ -L "${product_home}/current" ]] && [[ -e "${product_home}/current" ]]; then
-    log_success "macsetup current -> $(readlink "${product_home}/current")"
+    report_add "ok" "runtime" "current-symlink" "macsetup current -> $(readlink "${product_home}/current")"
   else
-    report_problem "macsetup 'current' symlink missing or broken — run 'rnfmac profile sync'"
+    report_add "error" "runtime" "current-symlink" "macsetup 'current' symlink missing or broken — run 'rnfmac profile sync'"
   fi
 
   if [[ -L "${RNF_HOME}/bin/rnfmac" ]] && [[ -e "${RNF_HOME}/bin/rnfmac" ]]; then
-    log_success "bin/rnfmac linked"
+    report_add "ok" "runtime" "bin-symlink" "bin/rnfmac linked"
   else
-    report_problem "bin/rnfmac missing or broken — run 'rnfmac profile sync'"
+    report_add "error" "runtime" "bin-symlink" "bin/rnfmac missing or broken — run 'rnfmac profile sync'"
   fi
 
   if [[ -L "${RNF_HOME}/completions/_rnfmac" ]] && [[ -e "${RNF_HOME}/completions/_rnfmac" ]]; then
-    log_success "completions/_rnfmac linked"
+    report_add "ok" "runtime" "completions-symlink" "completions/_rnfmac linked"
   else
-    report_problem "completions/_rnfmac missing or broken — run 'rnfmac profile sync'"
+    report_add "drift" "runtime" "completions-symlink" "completions/_rnfmac missing or broken — run 'rnfmac profile sync'"
   fi
 
   if [[ -f "${RNF_HOME}/shkit/current/shkit.sh" ]]; then
-    log_success "shkit installed and sourceable"
+    report_add "ok" "runtime" "shkit" "shkit installed and sourceable"
   else
-    report_problem "shkit not found at ${RNF_HOME}/shkit/current — reinstall macsetup"
+    report_add "error" "runtime" "shkit" "shkit not found at ${RNF_HOME}/shkit/current — reinstall macsetup"
   fi
 }
 
@@ -123,21 +146,20 @@ function check_relay_state() {
     return
   fi
   local homebrew_prefix
-  homebrew_prefix="$(brew --prefix 2>/dev/null)"
+  homebrew_prefix="$(brew --prefix 2>/dev/null)" || return 0
   if [[ -z "${homebrew_prefix}" ]] || ! git -C "${homebrew_prefix}" rev-parse --show-toplevel >/dev/null 2>&1; then
     return
   fi
 
   if git -C "${homebrew_prefix}" log -1 --pretty=%s 2>/dev/null | grep -q '^rn-forge: apply Homebrew remote relay$'; then
-    log_notice "Homebrew is patched with the remote relay (rnfmac brew relay --reset to undo)"
+    report_add "ok" "runtime" "relay" "Homebrew is patched with the remote relay (rnfmac brew relay --reset to undo)"
   else
-    log_success "Homebrew is on a clean base (no remote relay patch)"
+    report_add "ok" "runtime" "relay" "Homebrew is on a clean base (no remote relay patch)"
   fi
 }
 
 # @description Run `rnfmac system doctor`: all toolchain checks, in order.
 # @noargs
-# @set PROBLEMS Left at 1 if any check reported a problem.
 function execute() {
   check_homebrew
   check_ohmyzsh
@@ -148,8 +170,7 @@ function execute() {
 
 ${__SOURCED__:+return} # shellspec Include guard
 
+parse_args "$@"
 execute
-if [[ "${PROBLEMS}" -eq 0 ]]; then
-  log_success "system doctor passed"
-fi
-exit "${PROBLEMS}"
+report_render
+exit "$(report_exit_code)"

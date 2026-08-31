@@ -2,11 +2,17 @@
 
 Guidance for coding agents (Claude Code, Codex, and others — `AGENTS.md` points here) working in this repository.
 
-User-facing documentation lives in [README.md](README.md): what each `rnfmac` command does, the
-install/upgrade entry points and their flags, the `macsetup-config` layout, the Homebrew Remote
-Relay design and its env vars, and the full `mise run ...` task list. Read it for any of that
-instead of duplicating it here — this file covers only what an agent needs beyond it. Generated
-per-function API docs are in [`docs/`](docs/) and are never hand-edited.
+User-facing documentation starts in [README.md](README.md). Detailed command behavior is in
+[the command guide](docs/guides/commands.md); architecture is documented in the
+[runtime layout](docs/architecture/runtime-layout.md),
+[configuration model](docs/architecture/config-model.md), and
+[Remote Relay design](docs/architecture/remote-relay.md); development tasks and test conventions
+are in [the development guide](docs/guides/development.md). Generated per-function API reference
+lives under `docs/reference/` and is never hand-edited.
+
+The documentation architecture and source-of-truth boundaries are recorded in
+[docs-system.md](docs/architecture/docs-system.md). **Update that page whenever documentation
+tooling, generation, validation, or publishing changes.**
 
 ## Repo map
 
@@ -32,20 +38,9 @@ tarballs it for a GitHub Release.
 `commands/<group>/`) adds the sub-command *and* its completion — no registration anywhere.
 A `lib.sh` inside a group is shared-helper code, not a dispatchable sub-command.
 
-**Runtime layout:** `~/.rn-forge` (`RNF_HOME`) is the shared home for the rn-forge product family.
-Products install to `~/.rn-forge/<product>/<version>/` with `current` → latest; `bin/` and
-`completions/` hold one symlink per product. Upgrade/rollback = flip `current`.
-
-**Machine config** lives in the external `macsetup-config` repo, cloned to the persistent
-`~/.rn-forge/macsetup/config/` (`CONFIG_HOME`) — outside any versioned `<version>/` dir, so
-upgrades never touch it.
-
-**Runtime dependency:** every script sources `~/.rn-forge/shkit/current/shkit.sh` from the external
-`shkit` repo (`log_info`, `log_success`, `log_warning`, `log_notice`, `log_error`, `log_verbose`,
-`print_vars`). It is not vendored; `install.sh` is the only place that installs it (curling shkit's
-own installer — not `source.sh` — or `RNF_SHKIT_INSTALL_BUNDLE` pointing at a local tarball on a
-blocked network). Every other script assumes it's present and sources it by absolute path — no
-`PATH` dependency; wiring `~/.rn-forge/bin` onto `PATH` is owned by the shell profile.
+The versioned product home, persistent configuration checkout, install/upgrade mechanics, and
+external shkit dependency are documented in the architecture pages above; keep their user-facing
+explanations there rather than duplicating them here.
 
 ## Code style
 
@@ -55,7 +50,7 @@ blocked network). Every other script assumes it's present and sources it by abso
   zsh-only expansions) so shellcheck/shfmt can process it; `src/completions/_rnfmac` is the
   zsh-only exception, excluded from both tools
 - Every function carries `shdoc` `# @description`/`@arg`/`@stdout`/`@exitcode` annotations;
-  `mise run docs` renders them into `docs/`
+  `mise run docs` renders them into the gitignored `docs/reference/`
 - Dispatchable scripts end with `${__SOURCED__:+return}` before calling `execute` — that guard is
   what lets shellspec source them without running them
 
@@ -94,7 +89,8 @@ These are the decisions that look like bugs or gaps but aren't. Don't "fix" them
 ## Testing and CI
 
 `mise run test` runs the shellspec suite against a sandboxed `$HOME` with stubbed `curl`/`hostname`.
-`mise run verify` is the full local gate (see README's Development section for the task list).
+`mise run verify` is the full local gate (see the
+[development guide](docs/guides/development.md) for the task list).
 
 - **`system/init.sh` and `system/sync.sh` have no specs by convention, not oversight** — they drive
   real Homebrew/oh-my-zsh/uv/nvm/SDKMAN installers over the network with no mockable seam. That
@@ -103,5 +99,5 @@ These are the decisions that look like bugs or gaps but aren't. Don't "fix" them
   script that visibly executes still reports 0% covered), so `mise run test`/`verify` never invoke
   it and there is no local coverage gate. The `sonar` job in `.github/workflows/main.yml` runs on
   `ubuntu-22.04` (kcov isn't packaged for noble) and is the one place coverage is generated:
-  `shellspec --kcov tests/` produces `coverage/sonarqube.xml`, fed to the SonarCloud quality gate
+  `mise run test-coverage` produces `coverage/sonarqube.xml`, fed to the SonarCloud quality gate
   via `sonar-project.properties`' `sonar.coverage.reportPaths`.

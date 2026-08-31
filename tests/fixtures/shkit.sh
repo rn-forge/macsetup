@@ -7,13 +7,15 @@ if [[ -n "${ZSH_VERSION:-}" ]]; then
 else
   SCRIPT_DIR="$(cd "$(dirname -- "$0")" && pwd)"
 fi
-export RNF_LOG_LEVEL_DEBUG="DEBUG"
-log_info() { echo "[info] $*"; return 0; }
-log_success() { echo "[success] $*"; return 0; }
-log_warning() { echo "[warning] $*"; return 0; }
-log_notice() { echo "[notice] $*"; return 0; }
-log_verbose() { echo "[verbose] $*"; return 0; }
-log_error() { echo "[error] $*" >&2; return 0; }
+export RNF_LOG_LEVEL_DEBUG=10
+: "${RNF_LOG_LEVEL:=20}"
+_double_log() { [ "$1" -lt "${RNF_LOG_LEVEL}" ] && return 0; shift; echo "$@"; return 0; }
+log_info() { _double_log 20 "[info] $*"; }
+log_success() { _double_log 35 "[success] $*"; }
+log_warning() { _double_log 30 "[warning] $*"; }
+log_notice() { _double_log 25 "[notice] $*"; }
+log_verbose() { _double_log 15 "[verbose] $*"; }
+log_error() { _double_log 40 "[error] $*" >&2; }
 print_vars() { :; return 0; }
 confirm() {
   local msg="$1" reply

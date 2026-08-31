@@ -4,7 +4,7 @@
 # @brief `rnfmac profile check` — read-only profile drift report.
 # @description
 #   Read-only report: does the installed profile.zsh + rc-file patches match what
-#   profile sync would render? Exit 0 healthy, 1 drift/problems found.
+#   profile sync would render, using the shared structured report format.
 # Version: 1.0
 # Author: Rohit Narayanan
 
@@ -15,20 +15,41 @@ source "${RNF_HOME}/shkit/current/shkit.sh"
 
 SELF_PATH="$(readlink -f "$0")"
 source "$(dirname "${SELF_PATH}")/lib.sh"
-
-PROBLEMS=0
+source "$(dirname "$(dirname "${SELF_PATH}")")/lib/report.sh"
+export REPORT_GROUP="profile"
 
 # =============================================================================
 # Helper functions
 # =============================================================================
 
-# @description Log a warning and mark the run as having found a problem.
-# @arg $1 string The warning message.
-# @set PROBLEMS Set to 1.
-function report_problem() {
-  local message="$1"
-  log_warning "${message}"
-  PROBLEMS=1
+# @description Print `rnfmac profile check` usage.
+# @stdout The usage text.
+function usage() {
+  echo "usage: rnfmac profile check [--all] [--json]"
+}
+
+# @description Parse reporting and help flags.
+# @arg $@ string Flags: `--all`, `--json`, `-h`/`--help`/`help`.
+# @set RNFMAC_REPORT_ALL Set to 1 when `--all` is passed.
+# @set RNFMAC_REPORT_FORMAT Set to `json` when `--json` is passed.
+# @exitcode 0 Parsed successfully, or help was requested.
+# @exitcode 1 An argument was unrecognized.
+function parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    --all) export RNFMAC_REPORT_ALL=1 ;;
+    --json) export RNFMAC_REPORT_FORMAT=json ;;
+    -h | --help | help)
+      usage
+      exit 0
+      ;;
+    *)
+      usage >&2
+      exit 1
+      ;;
+    esac
+    shift
+  done
 }
 
 # =============================================================================
@@ -37,11 +58,11 @@ function report_problem() {
 
 # @description Check that a profile exists for the current host.
 # @noargs
-# @exitcode 1 No profile for this host (reported via `report_problem`).
+# @exitcode 1 No profile for this host.
 function check_host_profile() {
   local host_profile="${CONFIG_HOME}/hosts/${HOST_NAME}/profile.zsh"
   if [[ ! -f "${host_profile}" ]]; then
-    report_problem "no profile for host '${HOST_NAME}' — create hosts/${HOST_NAME}/ in macsetup-config"
+    report_add "warning" "profile" "host-profile" "no profile for host '${HOST_NAME}' — create hosts/${HOST_NAME}/ in macsetup-config"
     return 1
   fi
 }
@@ -54,11 +75,11 @@ function check_rendered_profile() {
   render_profile_content >"${tmp_profile}"
 
   if [[ ! -f "${PRODUCT_HOME}/profile.zsh" ]]; then
-    report_problem "no rendered profile at ${PRODUCT_HOME}/profile.zsh — run 'rnfmac profile sync'"
+    report_add "drift" "profile" "rendered-profile" "no rendered profile at ${PRODUCT_HOME}/profile.zsh — run 'rnfmac profile sync'"
   elif ! diff -q "${tmp_profile}" "${PRODUCT_HOME}/profile.zsh" >/dev/null 2>&1; then
-    report_problem "rendered profile.zsh is stale — run 'rnfmac profile sync'"
+    report_add "drift" "profile" "rendered-profile" "rendered profile.zsh is stale — run 'rnfmac profile sync'"
   else
-    log_success "rendered profile.zsh is up to date"
+    report_add "ok" "profile" "rendered-profile" "rendered profile.zsh is up to date"
   fi
   rm -f "${tmp_profile}"
 }
@@ -67,22 +88,21 @@ function check_rendered_profile() {
 # @noargs
 function check_rc_files() {
   if grep -qF "${MACSETUP_MARKER}" "${HOME}/.zprofile" 2>/dev/null && grep -qF "${MACSETUP_SOURCE_LINE}" "${HOME}/.zprofile" 2>/dev/null; then
-    log_success ".zprofile is patched"
+    report_add "ok" "profile" "zprofile" ".zprofile is patched"
   else
-    report_problem ".zprofile is missing the macsetup marker/profile lines — run 'rnfmac profile sync'"
+    report_add "drift" "profile" "zprofile" ".zprofile is missing the macsetup marker/profile lines — run 'rnfmac profile sync'"
   fi
 
   if grep -qF "${MACSETUP_MARKER}" "${HOME}/.zshrc" 2>/dev/null && grep -qF "${MACSETUP_SOURCE_LINE}" "${HOME}/.zshrc" 2>/dev/null; then
-    log_success ".zshrc is patched"
+    report_add "ok" "profile" "zshrc" ".zshrc is patched"
   else
-    report_problem ".zshrc is missing the macsetup marker/profile lines — run 'rnfmac profile sync'"
+    report_add "drift" "profile" "zshrc" ".zshrc is missing the macsetup marker/profile lines — run 'rnfmac profile sync'"
   fi
 }
 
 # @description Run `rnfmac profile check`: host-profile existence, then (if that
 #   passed) rendered-profile freshness and rc-file patch status.
 # @noargs
-# @set PROBLEMS Left at 1 if any check reported a problem.
 function execute() {
   if check_host_profile; then
     check_rendered_profile
@@ -92,8 +112,7 @@ function execute() {
 
 ${__SOURCED__:+return} # shellspec Include guard
 
+parse_args "$@"
 execute
-if [[ "${PROBLEMS}" -eq 0 ]]; then
-  log_success "profile check passed"
-fi
-exit "${PROBLEMS}"
+report_render
+exit "$(report_exit_code)"
