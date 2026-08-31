@@ -31,8 +31,10 @@ function usage() {
 # @exitcode 0 Parsed successfully, or help was requested.
 # @exitcode 1 An argument was unrecognized.
 function parse_args() {
+  local arg
   while [[ $# -gt 0 ]]; do
-    case "$1" in
+    arg="$1"
+    case "${arg}" in
     --all) export RNFMAC_REPORT_ALL=1 ;;
     --json) REPORT_OUTPUT_FORMAT=json ;;
     -h | --help | help)

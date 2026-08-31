@@ -35,7 +35,7 @@ run = "bash scripts/gen-docs.sh"
 description = "Build the MkDocs site into site/, or the given dir (strict — broken links fail the build)"
 depends = ["docs"]
 usage = '''
-arg "[site_dir]" default="site" help="Directory to build the site into"
+arg "[site_dir]" default=".docs-site" help="Directory to build the site into"
 '''
 run = "uv run --with mkdocs-material mkdocs build --strict --site-dir \"${usage_site_dir}\""
 

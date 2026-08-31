@@ -15,6 +15,8 @@ source "${RNF_HOME}/shkit/current/shkit.sh"
 SELF_PATH="$(readlink -f "$0")"
 source "$(dirname "$(dirname "${SELF_PATH}")")/lib/report.sh"
 export REPORT_GROUP="system"
+readonly CATEGORY_TOOLCHAIN="toolchain"
+readonly CATEGORY_RUNTIME="runtime"
 
 # =============================================================================
 # Helper functions
@@ -33,8 +35,10 @@ function usage() {
 # @exitcode 0 Parsed successfully, or help was requested.
 # @exitcode 1 An argument was unrecognized.
 function parse_args() {
+  local arg
   while [[ $# -gt 0 ]]; do
-    case "$1" in
+    arg="$1"
+    case "${arg}" in
     --all) export RNFMAC_REPORT_ALL=1 ;;
     --json) export RNFMAC_REPORT_FORMAT=json ;;
     -h | --help | help)
@@ -58,18 +62,18 @@ function parse_args() {
 # @noargs
 function check_homebrew() {
   if command -v brew >/dev/null 2>&1; then
-    report_add "ok" "toolchain" "homebrew" "$(brew --version | head -1)"
+    report_add "ok" "${CATEGORY_TOOLCHAIN}" "homebrew" "$(brew --version | head -1)"
   else
-    report_add "error" "toolchain" "homebrew" "homebrew not found — run 'rnfmac system init'"
+    report_add "error" "${CATEGORY_TOOLCHAIN}" "homebrew" "homebrew not found — run 'rnfmac system init'"
     return
   fi
 
   local plugin
   for plugin in zsh-completions zsh-autosuggestions zsh-syntax-highlighting; do
     if [[ -d "${ZSH_CUSTOM:-${HOME}/.oh-my-zsh/custom}/plugins/${plugin}" ]]; then
-      report_add "ok" "toolchain" "omz-plugin" "oh-my-zsh plugin '${plugin}' present"
+      report_add "ok" "${CATEGORY_TOOLCHAIN}" "omz-plugin" "oh-my-zsh plugin '${plugin}' present"
     else
-      report_add "drift" "toolchain" "omz-plugin" "oh-my-zsh plugin '${plugin}' missing — run 'rnfmac system init'"
+      report_add "drift" "${CATEGORY_TOOLCHAIN}" "omz-plugin" "oh-my-zsh plugin '${plugin}' missing — run 'rnfmac system init'"
     fi
   done
 }
@@ -78,9 +82,9 @@ function check_homebrew() {
 # @noargs
 function check_ohmyzsh() {
   if [[ -d "${HOME}/.oh-my-zsh" ]]; then
-    report_add "ok" "toolchain" "oh-my-zsh" "oh-my-zsh present"
+    report_add "ok" "${CATEGORY_TOOLCHAIN}" "oh-my-zsh" "oh-my-zsh present"
   else
-    report_add "drift" "toolchain" "oh-my-zsh" "oh-my-zsh not found — run 'rnfmac system init'"
+    report_add "drift" "${CATEGORY_TOOLCHAIN}" "oh-my-zsh" "oh-my-zsh not found — run 'rnfmac system init'"
   fi
 }
 
@@ -88,21 +92,21 @@ function check_ohmyzsh() {
 # @noargs
 function check_runtime_managers() {
   if command -v uv >/dev/null 2>&1; then
-    report_add "ok" "toolchain" "uv" "$(uv --version)"
+    report_add "ok" "${CATEGORY_TOOLCHAIN}" "uv" "$(uv --version)"
   else
-    report_add "drift" "toolchain" "uv" "uv not found — run 'rnfmac system init'"
+    report_add "drift" "${CATEGORY_TOOLCHAIN}" "uv" "uv not found — run 'rnfmac system init'"
   fi
 
   if [[ -d "${HOME}/.nvm" ]]; then
-    report_add "ok" "toolchain" "nvm" "nvm present"
+    report_add "ok" "${CATEGORY_TOOLCHAIN}" "nvm" "nvm present"
   else
-    report_add "drift" "toolchain" "nvm" "nvm not found — run 'rnfmac system init'"
+    report_add "drift" "${CATEGORY_TOOLCHAIN}" "nvm" "nvm not found — run 'rnfmac system init'"
   fi
 
   if [[ -f "${HOME}/.sdkman/bin/sdkman-init.sh" ]]; then
-    report_add "ok" "toolchain" "sdkman" "sdkman present"
+    report_add "ok" "${CATEGORY_TOOLCHAIN}" "sdkman" "sdkman present"
   else
-    report_add "drift" "toolchain" "sdkman" "sdkman not found — run 'rnfmac system init'"
+    report_add "drift" "${CATEGORY_TOOLCHAIN}" "sdkman" "sdkman not found — run 'rnfmac system init'"
   fi
 }
 
@@ -113,27 +117,27 @@ function check_rn_forge_layout() {
   local product_home="${RNF_HOME}/macsetup"
 
   if [[ -L "${product_home}/current" ]] && [[ -e "${product_home}/current" ]]; then
-    report_add "ok" "runtime" "current-symlink" "macsetup current -> $(readlink "${product_home}/current")"
+    report_add "ok" "${CATEGORY_RUNTIME}" "current-symlink" "macsetup current -> $(readlink "${product_home}/current")"
   else
-    report_add "error" "runtime" "current-symlink" "macsetup 'current' symlink missing or broken — run 'rnfmac profile sync'"
+    report_add "error" "${CATEGORY_RUNTIME}" "current-symlink" "macsetup 'current' symlink missing or broken — run 'rnfmac profile sync'"
   fi
 
   if [[ -L "${RNF_HOME}/bin/rnfmac" ]] && [[ -e "${RNF_HOME}/bin/rnfmac" ]]; then
-    report_add "ok" "runtime" "bin-symlink" "bin/rnfmac linked"
+    report_add "ok" "${CATEGORY_RUNTIME}" "bin-symlink" "bin/rnfmac linked"
   else
-    report_add "error" "runtime" "bin-symlink" "bin/rnfmac missing or broken — run 'rnfmac profile sync'"
+    report_add "error" "${CATEGORY_RUNTIME}" "bin-symlink" "bin/rnfmac missing or broken — run 'rnfmac profile sync'"
   fi
 
   if [[ -L "${RNF_HOME}/completions/_rnfmac" ]] && [[ -e "${RNF_HOME}/completions/_rnfmac" ]]; then
-    report_add "ok" "runtime" "completions-symlink" "completions/_rnfmac linked"
+    report_add "ok" "${CATEGORY_RUNTIME}" "completions-symlink" "completions/_rnfmac linked"
   else
-    report_add "drift" "runtime" "completions-symlink" "completions/_rnfmac missing or broken — run 'rnfmac profile sync'"
+    report_add "drift" "${CATEGORY_RUNTIME}" "completions-symlink" "completions/_rnfmac missing or broken — run 'rnfmac profile sync'"
   fi
 
   if [[ -f "${RNF_HOME}/shkit/current/shkit.sh" ]]; then
-    report_add "ok" "runtime" "shkit" "shkit installed and sourceable"
+    report_add "ok" "${CATEGORY_RUNTIME}" "shkit" "shkit installed and sourceable"
   else
-    report_add "error" "runtime" "shkit" "shkit not found at ${RNF_HOME}/shkit/current — reinstall macsetup"
+    report_add "error" "${CATEGORY_RUNTIME}" "shkit" "shkit not found at ${RNF_HOME}/shkit/current — reinstall macsetup"
   fi
 }
 
@@ -152,9 +156,9 @@ function check_relay_state() {
   fi
 
   if git -C "${homebrew_prefix}" log -1 --pretty=%s 2>/dev/null | grep -q '^rn-forge: apply Homebrew remote relay$'; then
-    report_add "ok" "runtime" "relay" "Homebrew is patched with the remote relay (rnfmac brew relay --reset to undo)"
+    report_add "ok" "${CATEGORY_RUNTIME}" "relay" "Homebrew is patched with the remote relay (rnfmac brew relay --reset to undo)"
   else
-    report_add "ok" "runtime" "relay" "Homebrew is on a clean base (no remote relay patch)"
+    report_add "ok" "${CATEGORY_RUNTIME}" "relay" "Homebrew is on a clean base (no remote relay patch)"
   fi
 }
 

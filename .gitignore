@@ -1,12 +1,10 @@
 # system files
 .DS_Store
 
-# generated artifacts
+# generated folders
 dist/
 docs/reference/
-site/
-
-# sonar-cleanup scratch space
+.docs-site/
 .sonar-cleanup/
 
 # BEGIN rn-forge agentkit

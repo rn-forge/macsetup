@@ -20,6 +20,7 @@ fi
 function report_add() {
   local result_status="$1" category="$2" check="$3" message="$4"
   REPORT_RECORDS+=("${result_status}${REPORT_SEPARATOR}${category}${REPORT_SEPARATOR}${check}${REPORT_SEPARATOR}${message}")
+  return 0
 }
 
 # @description Parse one encoded result into shared fields for report helpers.
@@ -30,7 +31,9 @@ function report_add() {
 # @set REPORT_MESSAGE Parsed message.
 # @set REPORT_RECORD_GROUP Parsed originating command group.
 function _report_parse_record() {
-  IFS="${REPORT_SEPARATOR}" read -r REPORT_STATUS REPORT_CATEGORY REPORT_CHECK REPORT_MESSAGE REPORT_RECORD_GROUP <<<"$1"
+  local record="$1"
+  IFS="${REPORT_SEPARATOR}" read -r REPORT_STATUS REPORT_CATEGORY REPORT_CHECK REPORT_MESSAGE REPORT_RECORD_GROUP <<<"${record}"
+  return 0
 }
 
 # @description Escape a value for use inside a JSON string.
@@ -43,6 +46,7 @@ function _report_json_escape() {
   value="${value//$'\n'/\\n}"
   value="${value//$'\t'/\\t}"
   printf '%s' "${value}"
+  return 0
 }
 
 # @description Print the worst status currently present in the report buffer.
@@ -72,6 +76,7 @@ function report_exit_code() {
   drift) echo 2 ;;
   *) echo 0 ;;
   esac
+  return 0
 }
 
 # @description Render the buffered records as human output, JSONL, or raw records.
@@ -112,6 +117,7 @@ function report_render() {
     warning) count_warning=$((count_warning + 1)) ;;
     drift) count_drift=$((count_drift + 1)) ;;
     error) count_error=$((count_error + 1)) ;;
+    *) ;;
     esac
   done
 
@@ -134,6 +140,7 @@ function report_render() {
         error) log_error "${REPORT_MESSAGE}" ;;
         drift | warning) log_warning "${REPORT_MESSAGE}" ;;
         ok) log_success "${REPORT_MESSAGE}" ;;
+        *) ;;
         esac
       done
     done

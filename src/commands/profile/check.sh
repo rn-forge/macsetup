@@ -16,7 +16,8 @@ source "${RNF_HOME}/shkit/current/shkit.sh"
 SELF_PATH="$(readlink -f "$0")"
 source "$(dirname "${SELF_PATH}")/lib.sh"
 source "$(dirname "$(dirname "${SELF_PATH}")")/lib/report.sh"
-export REPORT_GROUP="profile"
+readonly CATEGORY_PROFILE="profile"
+export REPORT_GROUP="${CATEGORY_PROFILE}"
 
 # =============================================================================
 # Helper functions
@@ -35,8 +36,10 @@ function usage() {
 # @exitcode 0 Parsed successfully, or help was requested.
 # @exitcode 1 An argument was unrecognized.
 function parse_args() {
+  local arg
   while [[ $# -gt 0 ]]; do
-    case "$1" in
+    arg="$1"
+    case "${arg}" in
     --all) export RNFMAC_REPORT_ALL=1 ;;
     --json) export RNFMAC_REPORT_FORMAT=json ;;
     -h | --help | help)
@@ -62,7 +65,7 @@ function parse_args() {
 function check_host_profile() {
   local host_profile="${CONFIG_HOME}/hosts/${HOST_NAME}/profile.zsh"
   if [[ ! -f "${host_profile}" ]]; then
-    report_add "warning" "profile" "host-profile" "no profile for host '${HOST_NAME}' — create hosts/${HOST_NAME}/ in macsetup-config"
+    report_add "warning" "${CATEGORY_PROFILE}" "host-profile" "no profile for host '${HOST_NAME}' — create hosts/${HOST_NAME}/ in macsetup-config"
     return 1
   fi
 }
@@ -75,11 +78,11 @@ function check_rendered_profile() {
   render_profile_content >"${tmp_profile}"
 
   if [[ ! -f "${PRODUCT_HOME}/profile.zsh" ]]; then
-    report_add "drift" "profile" "rendered-profile" "no rendered profile at ${PRODUCT_HOME}/profile.zsh — run 'rnfmac profile sync'"
+    report_add "drift" "${CATEGORY_PROFILE}" "rendered-profile" "no rendered profile at ${PRODUCT_HOME}/profile.zsh — run 'rnfmac profile sync'"
   elif ! diff -q "${tmp_profile}" "${PRODUCT_HOME}/profile.zsh" >/dev/null 2>&1; then
-    report_add "drift" "profile" "rendered-profile" "rendered profile.zsh is stale — run 'rnfmac profile sync'"
+    report_add "drift" "${CATEGORY_PROFILE}" "rendered-profile" "rendered profile.zsh is stale — run 'rnfmac profile sync'"
   else
-    report_add "ok" "profile" "rendered-profile" "rendered profile.zsh is up to date"
+    report_add "ok" "${CATEGORY_PROFILE}" "rendered-profile" "rendered profile.zsh is up to date"
   fi
   rm -f "${tmp_profile}"
 }
@@ -88,15 +91,15 @@ function check_rendered_profile() {
 # @noargs
 function check_rc_files() {
   if grep -qF "${MACSETUP_MARKER}" "${HOME}/.zprofile" 2>/dev/null && grep -qF "${MACSETUP_SOURCE_LINE}" "${HOME}/.zprofile" 2>/dev/null; then
-    report_add "ok" "profile" "zprofile" ".zprofile is patched"
+    report_add "ok" "${CATEGORY_PROFILE}" "zprofile" ".zprofile is patched"
   else
-    report_add "drift" "profile" "zprofile" ".zprofile is missing the macsetup marker/profile lines — run 'rnfmac profile sync'"
+    report_add "drift" "${CATEGORY_PROFILE}" "zprofile" ".zprofile is missing the macsetup marker/profile lines — run 'rnfmac profile sync'"
   fi
 
   if grep -qF "${MACSETUP_MARKER}" "${HOME}/.zshrc" 2>/dev/null && grep -qF "${MACSETUP_SOURCE_LINE}" "${HOME}/.zshrc" 2>/dev/null; then
-    report_add "ok" "profile" "zshrc" ".zshrc is patched"
+    report_add "ok" "${CATEGORY_PROFILE}" "zshrc" ".zshrc is patched"
   else
-    report_add "drift" "profile" "zshrc" ".zshrc is missing the macsetup marker/profile lines — run 'rnfmac profile sync'"
+    report_add "drift" "${CATEGORY_PROFILE}" "zshrc" ".zshrc is missing the macsetup marker/profile lines — run 'rnfmac profile sync'"
   fi
 }
 
