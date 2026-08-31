@@ -1,6 +1,7 @@
 [tools]
 shellcheck = "0.11.0"
 shfmt = "3.13.1"
+uv = "0.12.7"
 
 [tasks.format]
 description = "Format all shell scripts with shfmt"
