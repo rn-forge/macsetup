@@ -115,29 +115,9 @@ function write_brewfile() {
   log_verbose "Dropping dependency-only formulae (keeping only explicitly requested ones) ..."
   local leaves
   leaves="$(brew leaves --installed-on-request)"
-  LEAVES="${leaves}" awk '
-    BEGIN {
-      n = split(ENVIRON["LEAVES"], arr, "\n"); for (i = 1; i <= n; i++) requested[arr[i]] = 1
-      header["tap"] = "## taps"; header["brew"] = "## formulae"; header["cask"] = "## casks"
-    }
-    /^#/ { pending = $0; next }
-    /^brew "/ {
-      name = $0
-      sub(/^brew "/, "", name)
-      sub(/".*/, "", name)
-      if (!(name in requested)) { pending = ""; next }
-    }
-    {
-      if ($1 != last_type) {
-        if (last_type != "") print ""
-        if ($1 in header) print header[$1]
-        last_type = $1
-      }
-      if (pending != "") print pending
-      pending = ""
-      print
-    }
-  ' "${target}" >"${target}.tmp" && mv "${target}.tmp" "${target}"
+  local lib_dir
+  lib_dir="$(dirname "$(dirname "${SELF_PATH}")")/lib"
+  LEAVES="${leaves}" awk -f "${lib_dir}/dedupe-brewfile.awk" "${target}" >"${target}.tmp" && mv "${target}.tmp" "${target}"
 
   log_success "Brewfile updated at ${target}"
 }

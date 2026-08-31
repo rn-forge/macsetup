@@ -3,6 +3,13 @@ site_description: Architecture, usage, development, and shell reference for macs
 docs_dir: docs
 site_dir: site
 strict: true
+not_in_nav: |
+  reference/**
+validation:
+  nav:
+    omitted_files: warn
+  links:
+    anchors: warn
 theme:
   name: material
   palette:

@@ -21,7 +21,7 @@ Everything under `src/` is the distribution payload; `scripts/build.sh` stages i
 tarballs it for a GitHub Release.
 
 | Path | Role |
-|---|---|
+| --- | --- |
 | `src/rnfmac.sh` | The dispatcher (see contract below) |
 | `src/install.sh` | Standalone sourceable installer, also a release asset |
 | `src/commands/` | Top-level sub-commands: `sync`, `doctor`, `version`, `upgrade`, `cleanup` |
@@ -35,7 +35,7 @@ tarballs it for a GitHub Release.
 **Dispatcher contract:** `rnfmac <sub-command> [args]` → `commands/<sub_command>.sh`, and
 `rnfmac <group> <sub-command> [args]` → `commands/<group>/<sub_command>.sh` when
 `commands/<group>/` is a directory. Dropping a script into `commands/` (or a new
-`commands/<group>/`) adds the sub-command *and* its completion — no registration anywhere.
+`commands/<group>/`) adds the sub-command _and_ its completion — no registration anywhere.
 A `lib.sh` inside a group is shared-helper code, not a dispatchable sub-command.
 
 The versioned product home, persistent configuration checkout, install/upgrade mechanics, and
@@ -60,7 +60,7 @@ These are the decisions that look like bugs or gaps but aren't. Don't "fix" them
 
 - **A sourced file must define constants and read `$0` at the top level**, never inside a function.
   Under zsh, `readonly`/plain assignments made inside a function that's later `source`d become
-  function-local and vanish on return. `src/install.sh` sources shkit *before* defining
+  function-local and vanish on return. `src/install.sh` sources shkit _before_ defining
   `rnfmac_install()` for exactly this reason.
 - **`system/doctor.sh` is presence-only** — it checks that `uv`/`nvm`/`sdkman` exist rather than
   diffing installed runtime versions against the configured ones. Deliberate scope call.
@@ -68,11 +68,11 @@ These are the decisions that look like bugs or gaps but aren't. Don't "fix" them
   to install, is logged and skipped so the rest of the sync still runs; the script exits 1 at the
   end if anything was skipped. There is no hardcoded fallback pin in code — at least one of the
   shared or host `<runtime>-versions` file must exist per runtime.
-- **`profile/sync.sh` patches `.zshrc` *before* its `source $ZSH/oh-my-zsh.sh` line**, because
+- **`profile/sync.sh` patches `.zshrc` _before_ its `source $ZSH/oh-my-zsh.sh` line**, because
   `plugins=()` must be set before oh-my-zsh reads it. Both `.zprofile` and `.zshrc` get their own
   copy of the block: non-login shells (a plain `zsh`, a tmux pane) source only `.zshrc`.
 - **`sync.sh` runs `config/pull.sh` first**, so a freshly pulled Brewfile/version pins apply before
-  the rest. If the config checkout was *absent* it bootstraps it and stops without applying — that
+  the rest. If the config checkout was _absent_ it bootstraps it and stops without applying — that
   preserves the contract that an upgrade never applies configuration.
 - **Relay patches are the single source of truth.** `brew/relay.sh` resets `/opt/homebrew` to clean
   and re-applies `src/homebrew/patches/` fresh every time; nothing is cherry-picked from a stored
@@ -95,6 +95,19 @@ These are the decisions that look like bugs or gaps but aren't. Don't "fix" them
 - **`system/init.sh` and `system/sync.sh` have no specs by convention, not oversight** — they drive
   real Homebrew/oh-my-zsh/uv/nvm/SDKMAN installers over the network with no mockable seam. That
   surface is verified manually.
+- **`scripts/gen-docs.sh` is excluded from coverage** (via `sonar.coverage.exclusions`), same
+  rationale as `system/init.sh`/`system/sync.sh` — dev-tooling invoked from `mise run docs`, not
+  the shipped `rnfmac` payload. Verified manually.
+- **Docs link/anchor/orphan checking is native MkDocs validation, not a custom script.**
+  `mkdocs.yml`'s `strict: true` plus its `validation:` block (`nav.omitted_files: warn`,
+  `links.anchors: warn`) makes `mise run docs-site` fail the build on broken links, bad anchors,
+  missing nav targets, and orphan pages — no Python doc-linter needed.
+- **`src/commands/lib/dedupe-brewfile.awk` is a standalone file, not inlined, and is
+  coverage-excluded.** kcov traces bash statement boundaries, not physical lines inside a
+  multi-line string argument — an awk script embedded inline in `brew/diff.sh` would report every
+  one of its lines as uncovered even when exercised, because kcov never treats them as separate
+  statements. Extracting it to its own file (invoked via `awk -f`, same pattern as
+  `scripts/shdoc`) keeps the logic covered-by-tests without the false negative.
 - **Coverage is Linux-only.** kcov's line-tracing is a no-op on macOS (confirmed empirically — a
   script that visibly executes still reports 0% covered), so `mise run test`/`verify` never invoke
   it and there is no local coverage gate. The `sonar` job in `.github/workflows/main.yml` runs on

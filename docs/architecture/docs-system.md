@@ -16,11 +16,16 @@ The README is intentionally limited to what macsetup is, installation, a quick s
 
 ## Validation and publishing
 
-`mise run docs-site` builds into `site/` with MkDocs strict mode. Strict mode rejects missing navigation targets and other MkDocs warnings instead of publishing an incomplete site.
+`mise run docs-site` builds into `site/` with MkDocs strict mode. `mkdocs.yml`'s `validation:`
+block raises `nav.omitted_files` and `links.anchors` from MkDocs' default `info` level to `warn`,
+so strict mode turns broken links, bad anchors, missing navigation targets, and orphan pages into
+build failures — no separate doc-linter script. `not_in_nav: reference/**` excludes the generated
+reference tree from the orphan check, since only `reference/index.md` sits in `mkdocs.yml`'s nav
+and the rest are reached by links from it rather than being individually listed.
 
-`mise run docs-lint` complements MkDocs by checking relative links, heading anchors, and handwritten pages that are unreachable from `mkdocs.yml` navigation. Generated paths are discovered from `.gitignore` and excluded from orphan checks because they may not exist until `mise run docs` runs.
-
-`mise run verify` generates the reference, lints the documentation, and builds the site. The dedicated GitHub Pages workflow repeats generation and the strict build before publishing `site/`. GitHub Pages must be enabled once in repository settings with **Source: GitHub Actions**.
+`mise run verify` generates the reference and builds the site. The dedicated GitHub Pages workflow
+repeats generation and the strict build before publishing `site/`. GitHub Pages must be enabled
+once in repository settings with **Source: GitHub Actions**.
 
 ## Maintenance rule
 
@@ -29,4 +34,4 @@ Treat `mkdocs.yml` navigation as the canonical site structure. Add each new hand
 ## Changelog
 
 - 2026-08-31: Established one MkDocs site for handwritten guides and generated shell reference, with strict builds, link/orphan linting, and GitHub Pages publishing.
-
+- 2026-08-31: Replaced the `scripts/check-docs.py` doc-linter with native MkDocs `validation:` config (`nav.omitted_files`, `links.anchors` raised to `warn`) plus `not_in_nav` for the generated reference tree — MkDocs 1.5+ already validates broken links and missing nav targets by default under `strict: true`, so the custom script duplicated most of what the tool does natively.

@@ -19,15 +19,14 @@ mise run verify
 | `mise run test` | Run the ShellSpec suite under zsh. |
 | `mise run test-coverage` | Run ShellSpec under kcov and produce `coverage/sonarqube.xml` (Linux only). |
 | `mise run docs` | Generate shell API reference under `docs/reference/`. |
-| `mise run docs-lint` | Check documentation links, anchors, and navigation reachability. |
-| `mise run docs-site` | Build the strict MkDocs site into `site/`. |
+| `mise run docs-site` | Build the strict MkDocs site into `site/` — also validates links, anchors, and navigation reachability. |
 | `mise run docs-serve` | Serve the documentation with live reload. |
 | `mise run build` | Stage `dist/macsetup` and build the release archive. |
 | `mise run verify` | Run the full local and CI gate. |
 | `mise run clean` | Remove generated distribution artifacts. |
 | `mise run bump <patch\|minor\|major>` | Update `VERSION`; review and commit it yourself. |
 
-`mise run verify` is the required gate. The generated reference must be regenerated before the documentation lint and strict site build.
+`mise run verify` is the required gate. The generated reference must be regenerated before the strict site build.
 
 ## Tests and coverage
 
@@ -46,4 +45,3 @@ There is no local macOS coverage gate. kcov line tracing reports no useful shell
 - Run `mise run docs` after changing annotations; generated reference files are not committed or hand-edited.
 
 For architecture and non-obvious implementation constraints, read `CLAUDE.md` before changing code.
-

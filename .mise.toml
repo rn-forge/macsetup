@@ -31,10 +31,6 @@ run = "bash scripts/build.sh"
 description = "Generate shell reference docs from shdoc annotations under src/"
 run = "bash scripts/gen-docs.sh"
 
-[tasks.docs-lint]
-description = "Check the docs site for broken links, bad anchors, and orphan pages"
-run = "uv run --with mkdocs-material python scripts/check-docs.py ."
-
 [tasks.docs-site]
 description = "Build the MkDocs site into site/, or the given dir (strict — broken links fail the build)"
 depends = ["docs"]
@@ -70,5 +66,5 @@ echo "Bumped VERSION to $(cat VERSION)"
 """
 
 [tasks.verify]
-description = "Full pipeline: format-check, lint, test, build, docs, docs-lint, docs-site"
-depends = ["format-check", "lint", "test", "build", "docs", "docs-lint", "docs-site"]
+description = "Full pipeline: format-check, lint, test, build, docs, docs-site"
+depends = ["format-check", "lint", "test", "build", "docs", "docs-site"]

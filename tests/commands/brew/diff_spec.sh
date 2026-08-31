@@ -44,6 +44,25 @@ STUB
   return 0
 }
 
+It '--help prints usage and exits 0'
+When run script "${HOME}/.rn-forge/bin/rnfmac" brew diff --help
+The status should be success
+The output should include 'usage: rnfmac brew diff'
+End
+
+It 'rejects an unrecognized flag'
+When run script "${HOME}/.rn-forge/bin/rnfmac" brew diff --bogus
+The status should eq 1
+The error should include 'usage: rnfmac brew diff'
+End
+
+It '--write fails when the macsetup-config checkout is missing'
+rm -rf "${HOME}/.rn-forge/macsetup/config"
+When run script "${HOME}/.rn-forge/bin/rnfmac" brew diff --write
+The status should eq 1
+The output should include 'macsetup config checkout is missing'
+End
+
 It '--write updates the current host Brewfile in macsetup-config'
 When run script "${HOME}/.rn-forge/bin/rnfmac" brew diff --write
 The status should be success
