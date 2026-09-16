@@ -22,6 +22,12 @@ push_remote_commit() {
   return 0
 }
 
+push_without_message_and_print_subject() {
+  printf '\n# published update\n' >>"${HOME}/.rn-forge/macsetup/config/shared/profile.zsh"
+  "${HOME}/.rn-forge/bin/rnfmac" config push >/dev/null
+  git -C "${HOME}/.rn-forge/macsetup/config" log -1 --format=%s
+}
+
 It 'shows checkout status and revision'
 When run script "${HOME}/.rn-forge/bin/rnfmac" config status
 The status should be success
@@ -75,10 +81,16 @@ The contents of file "${HOME}/.rn-forge/macsetup/config/shared/profile.zsh" shou
 The contents of file "${HOME}/.rn-forge/macsetup/config/hosts/testhost/Brewfile" should include '# local update'
 End
 
-It 'requires an explicit push message'
-When run script "${HOME}/.rn-forge/bin/rnfmac" config push
+It 'defaults the push message to the hostname'
+When call push_without_message_and_print_subject
+The status should be success
+The output should equal 'testhost'
+End
+
+It 'rejects a malformed push flag'
+When run script "${HOME}/.rn-forge/bin/rnfmac" config push --bogus
 The status should be failure
-The error should include 'usage: rnfmac config push -m <message>'
+The error should include 'usage: rnfmac config push [-m <message>]'
 End
 
 It 'commits and pushes local config changes'

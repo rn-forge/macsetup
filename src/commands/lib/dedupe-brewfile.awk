@@ -1,8 +1,8 @@
 # Regroups a `brew bundle dump` Brewfile under `## taps`/`## formulae`/`## casks`
-# headers and drops `brew` lines whose formula isn't in $LEAVES (dependency-only
-# formulae) — see brew/diff.sh's write_brewfile.
+# headers and drops `brew` lines whose formula isn't in $REQUESTED_FORMULAE
+# (dependency-only formulae) — see brew/diff.sh's write_brewfile.
 BEGIN {
-  n = split(ENVIRON["LEAVES"], arr, "\n"); for (i = 1; i <= n; i++) requested[arr[i]] = 1
+  n = split(ENVIRON["REQUESTED_FORMULAE"], arr, "\n"); for (i = 1; i <= n; i++) requested[arr[i]] = 1
   header["tap"] = "## taps"; header["brew"] = "## formulae"; header["cask"] = "## casks"
 }
 /^#/ { pending = $0; next }

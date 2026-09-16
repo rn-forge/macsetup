@@ -17,7 +17,7 @@ if [ "$1" = bundle ] && [ "$2" = dump ]; then
       --file=*) target="${arg#--file=}" ;;
     esac
   done
-  printf 'brew "git"\n' >"${target}"
+  printf 'brew "git"\nbrew "shellcheck"\n' >"${target}"
   exit 0
 fi
 if [ "$1" = bundle ] && [ "$2" = check ]; then
@@ -35,6 +35,10 @@ if [ "$1" = bundle ] && [ "$2" = cleanup ]; then
 fi
 if [ "$1" = leaves ]; then
   echo git
+  exit 0
+fi
+if [ "$1" = list ] && [ "$2" = --formula ] && [ "$3" = --installed-on-request ]; then
+  printf 'git\nshellcheck\n'
   exit 0
 fi
 exit 1
@@ -68,6 +72,7 @@ When run script "${HOME}/.rn-forge/bin/rnfmac" brew diff --write
 The status should be success
 The output should include 'Brewfile updated'
 The contents of file "${HOME}/.rn-forge/macsetup/config/hosts/testhost/Brewfile" should include 'brew "git"'
+The contents of file "${HOME}/.rn-forge/macsetup/config/hosts/testhost/Brewfile" should include 'brew "shellcheck"'
 End
 
 It 'hides a healthy result by default'

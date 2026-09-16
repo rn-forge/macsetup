@@ -5,8 +5,9 @@
 # @description
 #   Publishes local macsetup-config changes directly to the linear main branch.
 #   Fast-forwards onto origin/main first (carrying the local changes across) so a
-#   remote that moved on is not a reason to fail. Requires an explicit commit
-#   message and refuses to merge, rebase, or force-push.
+#   remote that moved on is not a reason to fail. Defaults the commit message to
+#   the host's name when `-m`/`--message` is omitted, and refuses to merge,
+#   rebase, or force-push.
 # Version: 1.0
 # Author: Rohit Narayanan
 
@@ -20,13 +21,20 @@ source "$(dirname "${SELF_PATH}")/lib.sh"
 
 MESSAGE=""
 
-# @description Parse `-m <message>` or `--message <message>`.
+# @description Parse `-m <message>` or `--message <message>`. Defaults `MESSAGE`
+#   to the host's name when no flag is given.
 # @arg $@ string Command arguments.
-# @exitcode 1 Arguments are missing or invalid.
+# @set MESSAGE The commit message to use.
+# @exitcode 1 Arguments are given but invalid.
 function parse_args() {
+  if [[ $# -eq 0 ]]; then
+    MESSAGE="$(hostname | tr '[:upper:]' '[:lower:]' | cut -d. -f1)"
+    return 0
+  fi
+
   local flag="$1" message="$2"
   if [[ $# -ne 2 ]] || { [[ "${flag}" != "-m" ]] && [[ "${flag}" != "--message" ]]; } || [[ -z "${message}" ]]; then
-    echo "usage: rnfmac config push -m <message>" >&2
+    echo "usage: rnfmac config push [-m <message>]" >&2
     return 1
   fi
   MESSAGE="${message}"

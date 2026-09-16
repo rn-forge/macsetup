@@ -115,11 +115,11 @@ function write_brewfile() {
   brew bundle dump --file="${target}" --force --no-vscode --no-uv --no-npm
 
   log_verbose "Dropping dependency-only formulae (keeping only explicitly requested ones) ..."
-  local leaves
-  leaves="$(brew leaves --installed-on-request)"
+  local requested_formulae
+  requested_formulae="$(brew list --formula --installed-on-request)"
   local lib_dir
   lib_dir="$(dirname "$(dirname "${SELF_PATH}")")/lib"
-  LEAVES="${leaves}" awk -f "${lib_dir}/dedupe-brewfile.awk" "${target}" >"${target}.tmp" && mv "${target}.tmp" "${target}"
+  REQUESTED_FORMULAE="${requested_formulae}" awk -f "${lib_dir}/dedupe-brewfile.awk" "${target}" >"${target}.tmp" && mv "${target}.tmp" "${target}"
 
   log_success "Brewfile updated at ${target}"
 }
