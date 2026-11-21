@@ -20,16 +20,16 @@ setup_sandbox() {
   echo "0.1.2" >"${HOME}/.rn-forge/shkit/v0.1.2/VERSION"
   ln -sfn v0.1.2 "${HOME}/.rn-forge/shkit/current"
 
-  # fixture checkout: the real src/ + VERSION, plus a profile for the stubbed hostname
+  # fixture checkout: the real shell/ + VERSION, plus a profile for the stubbed hostname
   CHECKOUT="${SANDBOX}/checkout"
   mkdir -p "${CHECKOUT}"
-  cp -R "${SHELLSPEC_PROJECT_ROOT}/src" "${CHECKOUT}/src"
+  cp -R "${SHELLSPEC_PROJECT_ROOT}/shell" "${CHECKOUT}/shell"
   cp "${SHELLSPEC_PROJECT_ROOT}/VERSION" "${CHECKOUT}/VERSION"
   CHECKOUT_VERSION="$(cat "${CHECKOUT}/VERSION")"
   export CHECKOUT_VERSION
-  mkdir -p "${CHECKOUT}/src/profiles/testhost"
-  printf '# shellcheck disable=SC2148\nexport RNF_TEST_HOST_MARKER=1\n' >"${CHECKOUT}/src/profiles/testhost/profile.zsh"
-  printf '# test Brewfile — intentionally empty\n' >"${CHECKOUT}/src/profiles/testhost/Brewfile"
+  mkdir -p "${CHECKOUT}/shell/profiles/testhost"
+  printf '# shellcheck disable=SC2148\nexport RNF_TEST_HOST_MARKER=1\n' >"${CHECKOUT}/shell/profiles/testhost/profile.zsh"
+  printf '# test Brewfile — intentionally empty\n' >"${CHECKOUT}/shell/profiles/testhost/Brewfile"
 
   # local macsetup-config origin: installers clone it and commands pull/push it
   # without touching the network.
@@ -38,8 +38,8 @@ setup_sandbox() {
   mkdir -p "${CONFIG_SEED}/shared" "${CONFIG_SEED}/hosts/testhost"
   cp "${FIXTURES}/config/shared/profile.zsh" "${CONFIG_SEED}/shared/profile.zsh"
   cp "${FIXTURES}/config/shared/aliases.zsh" "${CONFIG_SEED}/shared/aliases.zsh"
-  cp "${CHECKOUT}/src/profiles/testhost/profile.zsh" "${CONFIG_SEED}/hosts/testhost/profile.zsh"
-  cp "${CHECKOUT}/src/profiles/testhost/Brewfile" "${CONFIG_SEED}/hosts/testhost/Brewfile"
+  cp "${CHECKOUT}/shell/profiles/testhost/profile.zsh" "${CONFIG_SEED}/hosts/testhost/profile.zsh"
+  cp "${CHECKOUT}/shell/profiles/testhost/Brewfile" "${CONFIG_SEED}/hosts/testhost/Brewfile"
   git -C "${CONFIG_SEED}" init -b main >/dev/null
   git -C "${CONFIG_SEED}" config user.name 'ShellSpec'
   git -C "${CONFIG_SEED}" config user.email 'shellspec@example.invalid'
@@ -76,7 +76,7 @@ cleanup_sandbox() {
 # install.sh — so that commands relying on an already-installed PRODUCT_HOME/current
 # (profile/sync.sh, sync.sh, doctor.sh, upgrade.sh, brew/relay.sh --regen) have one.
 install_dist_from_checkout() {
-  "${CHECKOUT}/src/install.sh" >/dev/null 2>&1
+  "${CHECKOUT}/shell/install.sh" >/dev/null 2>&1
   git -C "${HOME}/.rn-forge/macsetup/config" config user.name 'ShellSpec'
   git -C "${HOME}/.rn-forge/macsetup/config" config user.email 'shellspec@example.invalid'
   return 0
@@ -84,13 +84,13 @@ install_dist_from_checkout() {
 
 run_sync_from_checkout() {
   install_dist_from_checkout
-  "${CHECKOUT}/src/commands/sync.sh"
+  "${CHECKOUT}/shell/commands/sync.sh"
   return 0
 }
 
 run_profile_sync_from_checkout() {
   install_dist_from_checkout
-  "${CHECKOUT}/src/commands/profile/sync.sh"
+  "${CHECKOUT}/shell/commands/profile/sync.sh"
   return 0
 }
 
@@ -104,7 +104,7 @@ write_unit_driver() {
     echo '#!/bin/zsh'
     echo 'set -eo pipefail'
     echo '__SOURCED__=1'
-    echo "source '${CHECKOUT}/src/commands/${source_script}'"
+    echo "source '${CHECKOUT}/shell/commands/${source_script}'"
     printf '%s\n' "$@"
   } >"${DRIVER}"
   chmod +x "${DRIVER}"
@@ -118,7 +118,7 @@ build_release_tarball() {
   local stage="${SANDBOX}/release-stage"
   rm -rf "${stage}"
   mkdir -p "${stage}"
-  cp -R "${CHECKOUT}/src/." "${stage}/"
+  cp -R "${CHECKOUT}/shell/." "${stage}/"
   echo "${version}" >"${stage}/VERSION"
   export RNF_TEST_RELEASE_TARBALL="${SANDBOX}/macsetup.tar.gz"
   tar -czf "${RNF_TEST_RELEASE_TARBALL}" -C "${stage}" .

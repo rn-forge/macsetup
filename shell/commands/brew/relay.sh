@@ -20,7 +20,7 @@ source "${RNF_HOME}/shkit/current/shkit.sh"
 export RNF_LOG_LEVEL=${RNF_LOG_LEVEL_DEBUG}
 
 SELF_PATH="$(readlink -f "$0")"
-SRC_ROOT="$(dirname "$(dirname "$(dirname "${SELF_PATH}")")")" # unpacked dist root, or src/ in a git checkout
+SRC_ROOT="$(dirname "$(dirname "$(dirname "${SELF_PATH}")")")" # unpacked dist root, or shell/ in a git checkout
 
 ## RNFMAC_TEST_HOMEBREW_PREFIX is a shellspec-only test seam (mirrors the RNFMAC_SYNC_PROFILES_ONLY
 ## / RNF_TEST_* pattern used elsewhere) — production always operates on the real /opt/homebrew.
@@ -257,7 +257,7 @@ function reset_relay() {
 function regen_patches() {
   local managed target
   if [[ -z "$(checkout_root)" ]]; then
-    log_warning "'--regen' requires a git checkout — run via 'src/rnfmac.sh brew relay --regen' from the macsetup checkout"
+    log_warning "'--regen' requires a git checkout — run via 'shell/rnfmac.sh brew relay --regen' from the macsetup checkout"
     exit 1
   fi
 

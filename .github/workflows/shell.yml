@@ -1,21 +1,35 @@
-name: CICD
+name: Shell product
+
+# The shell `rnfmac` is still the shipped product until the Phase 4 cutover in
+# docs/specs/python-tool-port.md: this workflow verifies it and publishes its
+# GitHub Release from VERSION. The Python package is checked by ci.yml.
 
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-  workflow_dispatch: # manual trigger
+  workflow_dispatch: {}
 
 permissions:
   contents: read
+
+concurrency:
+  group: shell-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   verify:
     # macos: the shellspec suite drives the real scripts, which use BSD sed/zsh
     runs-on: macos-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Install mise tools (shellcheck, shfmt)
         uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2
@@ -34,7 +48,7 @@ jobs:
         run: mise run verify
 
       - name: Upload release assets
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-assets
           path: |
@@ -42,41 +56,6 @@ jobs:
             dist/macsetup.tar.gz.sha256
             dist/install.sh
           retention-days: 7
-
-  sonar:
-    needs: [verify]
-    # kcov isn't packaged for ubuntu-latest (24.04/noble) — pinned to 22.04 where it is
-    runs-on: ubuntu-22.04
-    permissions:
-      contents: read
-      pull-requests: read
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Install mise tools
-        uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2
-
-      - name: Install ShellSpec
-        run: |
-          curl -fsSL --proto '=https' --tlsv1.2 -o /tmp/shellspec-install.sh \
-            https://raw.githubusercontent.com/shellspec/shellspec/f2d13f991885ef44e6b54e571e0842222251b111/install.sh
-          echo "4cac73d958d1ca8c502f3aff1a3b3cfa46ab0062f81f1cc522b83b7b2b302175  /tmp/shellspec-install.sh" | sha256sum -c -
-          sh /tmp/shellspec-install.sh --yes
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      - name: Install kcov and zsh
-        run: sudo apt-get update && sudo apt-get install -y kcov zsh
-
-      # kcov's line-tracing only works on Linux (a no-op on macOS, where `verify` runs) —
-      # this is the one place coverage data is generated, feeding sonar.coverage.reportPaths.
-      - name: Run tests with coverage
-        run: mise run test-coverage
-
-      - uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8.2.1
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   publish:
     if: |
@@ -86,11 +65,16 @@ jobs:
       needs.verify.result == 'success'
     needs: [verify]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # pushing the release tag below needs the checkout's credentials
+          persist-credentials: true # zizmor: ignore[artipacked]
 
       - name: Read version
         id: read_version
@@ -108,15 +92,17 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Download release assets
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-assets
           path: dist/
 
-      - name: Create and push tag
+      - name: Create and publish tag
         id: tag
+        env:
+          VERSION: ${{ steps.read_version.outputs.version }}
         run: |
-          tag="v${{ steps.read_version.outputs.version }}"
+          tag="v${VERSION}"
           if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null; then
             printf '%s\n' "Tag $tag already exists, skipping release."
             printf 'tag_pushed=false\n' >> "$GITHUB_OUTPUT"
@@ -128,11 +114,9 @@ jobs:
 
       - name: Publish GitHub Release
         if: steps.tag.outputs.tag_pushed == 'true'
-        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
-        with:
-          tag_name: v${{ steps.read_version.outputs.version }}
-          generate_release_notes: true
-          files: |
-            dist/macsetup.tar.gz
-            dist/macsetup.tar.gz.sha256
-            dist/install.sh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.read_version.outputs.version }}
+        run: |
+          gh release create "v${VERSION}" --verify-tag --generate-notes \
+            dist/macsetup.tar.gz dist/macsetup.tar.gz.sha256 dist/install.sh

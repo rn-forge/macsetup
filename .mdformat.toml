@@ -1,0 +1,18 @@
+# Seeded by kiln — this file is yours.
+#
+# Its presence is what opts this repo into Markdown formatting at all: the
+# task exists in every repo, the style is each repo's own. kiln writes this
+# once and never touches it again.
+#
+# `task lint` checks the files git lists — tracked and untracked, less what
+# `.gitignore` ignores — so tool caches, build output and virtualenvs are never
+# seen. `exclude` is for files git does list but this repo does not format.
+wrap = 80
+
+[plugin.tables]
+compact_tables = true
+
+[plugin.mkdocs]
+align_semantic_breaks_in_lists = true
+ignore_missing_references = true
+no_mkdocs_math = true

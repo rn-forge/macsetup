@@ -103,7 +103,7 @@ The output should include 'Homebrew is patched with the remote relay'
 End
 
 It 'prints usage for --help'
-When run script "${CHECKOUT}/src/commands/system/doctor.sh" --help
+When run script "${CHECKOUT}/shell/commands/system/doctor.sh" --help
 The status should be success
 The output should include 'usage: rnfmac system doctor [--all] [--json]'
 End

@@ -18,10 +18,10 @@ setup_install() {
   build_release_tarball # stage v9.9.9 for the curl stub (streaming mode)
 
   # streaming mode needs a copy with no sibling rnfmac.sh/VERSION — the real
-  # src/install.sh always has both, which would trigger in-path mode instead
+  # shell/install.sh always has both, which would trigger in-path mode instead
   STANDALONE_INSTALL_SH="${SANDBOX}/standalone/install.sh"
   mkdir -p "$(dirname "${STANDALONE_INSTALL_SH}")"
-  cp "${SHELLSPEC_PROJECT_ROOT}/src/install.sh" "${STANDALONE_INSTALL_SH}"
+  cp "${SHELLSPEC_PROJECT_ROOT}/shell/install.sh" "${STANDALONE_INSTALL_SH}"
   INSTALL_SH="${STANDALONE_INSTALL_SH}"
   export INSTALL_SH
   return 0
@@ -90,7 +90,7 @@ It 'installs in-path from a sibling checkout without downloading the macsetup ta
 # CHECKOUT's own VERSION (CHECKOUT_VERSION) differs from the streaming fixture (9.9.9)
 # staged above — installing CHECKOUT_VERSION here proves the tarball download was
 # skipped entirely
-When run script "${CHECKOUT}/src/install.sh"
+When run script "${CHECKOUT}/shell/install.sh"
 The status should be success
 The output should include "distribution installed (current -> v${CHECKOUT_VERSION})"
 The path "${HOME}/.rn-forge/macsetup/v${CHECKOUT_VERSION}" should be directory
@@ -117,7 +117,7 @@ build_release_tarball 6.6.6
 ARCHIVE="${SANDBOX}/handoff.tar.gz"
 cp "${RNF_TEST_RELEASE_TARBALL}" "${ARCHIVE}"
 # --archive must win over the in-path dist sitting next to this install.sh
-When run script "${CHECKOUT}/src/install.sh" --archive "${ARCHIVE}"
+When run script "${CHECKOUT}/shell/install.sh" --archive "${ARCHIVE}"
 The status should be success
 The output should include 'installing macsetup from'
 The output should not include 'downloading latest release'
@@ -130,7 +130,7 @@ build_release_tarball 6.6.6
 ARCHIVE="${SANDBOX}/handoff.tar.gz"
 cp "${RNF_TEST_RELEASE_TARBALL}" "${ARCHIVE}"
 echo "0000000000000000000000000000000000000000000000000000000000000000  handoff.tar.gz" >"${ARCHIVE}.sha256"
-export ARCHIVE CHECKOUT_INSTALL_SH="${CHECKOUT}/src/install.sh"
+export ARCHIVE CHECKOUT_INSTALL_SH="${CHECKOUT}/shell/install.sh"
 When run zsh -c '. "${CHECKOUT_INSTALL_SH}" --archive "${ARCHIVE}"; echo "shell-alive rc=$?"'
 The status should be success
 The output should include "${SHELL_ALIVE_RC1}"
@@ -139,7 +139,7 @@ The path "${HOME}/.rn-forge/macsetup/v6.6.6" should not be exist
 End
 
 It 'does not kill the sourcing shell when the --archive path is missing'
-export CHECKOUT_INSTALL_SH="${CHECKOUT}/src/install.sh"
+export CHECKOUT_INSTALL_SH="${CHECKOUT}/shell/install.sh"
 When run zsh -c '. "${CHECKOUT_INSTALL_SH}" --archive /nonexistent/macsetup.tar.gz; echo "shell-alive rc=$?"'
 The status should be success
 The output should include "${SHELL_ALIVE_RC1}"
@@ -147,7 +147,7 @@ The error should include 'archive not found'
 End
 
 It 'does not kill the sourcing shell on a bad installer argument'
-export CHECKOUT_INSTALL_SH="${CHECKOUT}/src/install.sh"
+export CHECKOUT_INSTALL_SH="${CHECKOUT}/shell/install.sh"
 When run zsh -c '. "${CHECKOUT_INSTALL_SH}" --bogus; echo "shell-alive rc=$?"'
 The status should be success
 The output should include "${SHELL_ALIVE_RC1}"
@@ -155,7 +155,7 @@ The error should include 'usage: . install.sh [--archive <path>]'
 End
 
 It 'in-path re-run from the already-installed dist is idempotent'
-"${CHECKOUT}/src/install.sh" >/dev/null 2>&1
+"${CHECKOUT}/shell/install.sh" >/dev/null 2>&1
 When run script "${HOME}/.rn-forge/macsetup/current/install.sh"
 The status should be success
 The output should include "already on the latest release (v${CHECKOUT_VERSION})"
@@ -169,7 +169,7 @@ cp "${FIXTURES}/shkit-install.sh" "${bundle_stage}/install.sh"
 bundle="${SANDBOX}/shkit.tar.gz"
 tar -czf "${bundle}" -C "${bundle_stage}" .
 export RNF_SHKIT_INSTALL_BUNDLE="${bundle}"
-When run script "${CHECKOUT}/src/install.sh"
+When run script "${CHECKOUT}/shell/install.sh"
 The status should be success
 The output should include "distribution installed (current -> v${CHECKOUT_VERSION})"
 The path "${HOME}/.rn-forge/shkit/current/shkit.sh" should be file
@@ -178,7 +178,7 @@ End
 It 'does not kill the sourcing shell when RNF_SHKIT_INSTALL_BUNDLE fails to extract'
 rm -rf "${HOME}/.rn-forge/shkit"
 export RNF_SHKIT_INSTALL_BUNDLE="/nonexistent/shkit.tar.gz"
-export CHECKOUT_INSTALL_SH="${CHECKOUT}/src/install.sh"
+export CHECKOUT_INSTALL_SH="${CHECKOUT}/shell/install.sh"
 When run zsh -c '. "${CHECKOUT_INSTALL_SH}"; echo "shell-alive rc=$?"'
 The status should be success
 The output should include "${SHELL_ALIVE_RC1}"

@@ -9,7 +9,7 @@ AfterEach 'cleanup_sandbox'
 
 It 'runs profile sync and skips brew/system when RNFMAC_SYNC_PROFILES_ONLY is set'
 install_dist_from_checkout
-When run script "${CHECKOUT}/src/commands/sync.sh"
+When run script "${CHECKOUT}/shell/commands/sync.sh"
 The status should be success
 The output should include 'Profile synced successfully'
 The output should include 'loading macsetup profile'
@@ -20,7 +20,7 @@ End
 It 'clones but does not apply config for a pre-config upgrade migration'
 install_dist_from_checkout
 rm -rf "${HOME}/.rn-forge/macsetup/config"
-When run script "${CHECKOUT}/src/commands/sync.sh"
+When run script "${CHECKOUT}/shell/commands/sync.sh"
 The status should be success
 The output should include 'configuration checkout created but not applied'
 The output should not include 'Profile synced successfully'

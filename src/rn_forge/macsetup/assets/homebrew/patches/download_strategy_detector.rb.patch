@@ -1,0 +1,35 @@
+diff --git a/Library/Homebrew/download_strategy/download_strategy_detector.rb b/Library/Homebrew/download_strategy/download_strategy_detector.rb
+index a1d1af085f..5546182265 100644
+--- a/Library/Homebrew/download_strategy/download_strategy_detector.rb
++++ b/Library/Homebrew/download_strategy/download_strategy_detector.rb
+@@ -22,7 +22,7 @@ class DownloadStrategyDetector
+ 
+   sig { params(url: String).returns(T::Class[AbstractDownloadStrategy]) }
+   def self.detect_from_url(url)
+-    case url
++    strategy = case url
+     when GitHubPackages::URL_REGEX
+       CurlGitHubPackagesDownloadStrategy
+     when %r{^https?://github\.com/[^/]+/[^/]+\.git$}
+@@ -58,6 +58,21 @@ class DownloadStrategyDetector
+     else
+       CurlDownloadStrategy
+     end
++
++    if ENV.fetch("HOMEBREW_REMOTE_RELAY_ENABLED", "0") == "1"
++      if strategy <= CurlDownloadStrategy
++        # $stderr.puts "Warning: Overriding Download strategy to RemoteRelayCurlDownloadStrategy: #{strategy} for #{url}"
++        strategy = RemoteRelayCurlDownloadStrategy
++      end
++    end
++
++    if ENV.fetch("HOMEBREW_REMOTE_RELAY_DEBUG", "0") == "1"
++      unless strategy == RemoteRelayCurlDownloadStrategy
++        $stderr.puts "Warning: Download strategy: #{strategy} for #{url}"
++      end
++    end
++
++    return strategy
+   end
+ 
+   sig { params(symbol: Symbol).returns(T::Class[AbstractDownloadStrategy]) }

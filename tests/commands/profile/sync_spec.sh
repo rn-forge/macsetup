@@ -11,7 +11,7 @@ PROFILE_SYNCED_MSG='Profile synced successfully'
 
 It 'runs against an already-installed dist (installed by install.sh, not by profile sync itself)'
 install_dist_from_checkout
-When run script "${CHECKOUT}/src/commands/profile/sync.sh"
+When run script "${CHECKOUT}/shell/commands/profile/sync.sh"
 The status should be success
 The output should include "${PROFILE_SYNCED_MSG}"
 The path "${HOME}/.rn-forge/macsetup/v${CHECKOUT_VERSION}" should be directory
@@ -23,7 +23,7 @@ End
 
 It 'renders shared + host profile and copies the Brewfile'
 install_dist_from_checkout
-When run script "${CHECKOUT}/src/commands/profile/sync.sh"
+When run script "${CHECKOUT}/shell/commands/profile/sync.sh"
 The status should be success
 The output should include "${PROFILE_SYNCED_MSG}"
 The contents of file "${HOME}/.rn-forge/macsetup/profile.zsh" should include 'RNFMAC_PROFILE_LOADED'
@@ -34,7 +34,7 @@ End
 
 It 'patches .zprofile and .zshrc with the profile source line'
 install_dist_from_checkout
-When run script "${CHECKOUT}/src/commands/profile/sync.sh"
+When run script "${CHECKOUT}/shell/commands/profile/sync.sh"
 The status should be success
 The output should include "${PROFILE_SYNCED_MSG}"
 The contents of file "${HOME}/.zprofile" should include "${MACSETUP_RC_MARKER}"
@@ -76,7 +76,7 @@ End
 It 'fails clearly when the host has no profile directory'
 install_dist_from_checkout
 rm -rf "${HOME}/.rn-forge/macsetup/config/hosts/testhost"
-When run script "${CHECKOUT}/src/commands/profile/sync.sh"
+When run script "${CHECKOUT}/shell/commands/profile/sync.sh"
 The status should be failure
 The output should include "no profile for host 'testhost'"
 End

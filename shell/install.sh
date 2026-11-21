@@ -7,10 +7,10 @@
 #   Streaming (fresh machine, no local checkout) — safe to source, downloads the
 #   latest release:
 #     . <(curl -fsSL https://github.com/rn-forge/macsetup/releases/latest/download/install.sh)
-#   In-path (an unpacked release dist, or this repo's src/, sits next to this file)
+#   In-path (an unpacked release dist, or this repo's shell/, sits next to this file)
 #   — installs straight from that tree, no network round-trip for macsetup itself
 #   (shkit below is still fetched fresh either way):
-#     . src/install.sh
+#     . shell/install.sh
 #   Archive (a release tarball already on disk) — unpacks and installs it, no
 #   download; takes precedence over in-path detection:
 #     . ./install.sh --archive ~/Downloads/macsetup.tar.gz
@@ -242,7 +242,7 @@ function rnfmac_install() {
   local src_root version_file extract_dir tmp_dir version tag dist_path
 
   ## In-path install: an unpacked release dist has VERSION directly alongside this
-  ## script; a git checkout has it one level up (src/install.sh, VERSION at repo root).
+  ## script; a git checkout has it one level up (shell/install.sh, VERSION at repo root).
   src_root="$(dirname "${SELF_PATH}")"
   if [[ -f "${src_root}/VERSION" ]]; then
     version_file="${src_root}/VERSION"

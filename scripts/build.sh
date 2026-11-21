@@ -1,7 +1,7 @@
 #!/bin/bash
 # Builds the macsetup distribution into dist/:
 #   dist/macsetup/                 staged dist tree (= tarball contents):
-#                                   src/ contents plus VERSION
+#                                   shell/ contents plus VERSION
 #   dist/macsetup.tar.gz         release tarball — unversioned name,
 #                                          so install.sh/upgrade.sh can fetch
 #                                          it via GitHub's releases/latest/
@@ -31,8 +31,8 @@ sha256_of() {
 rm -rf "${STAGE}"
 mkdir -p "${STAGE}"
 
-# Stage the dist tree: full src/ contents plus VERSION.
-cp -R "${REPO_ROOT}/src/." "${STAGE}/"
+# Stage the dist tree: full shell/ contents plus VERSION.
+cp -R "${REPO_ROOT}/shell/." "${STAGE}/"
 find "${STAGE}" -name '.DS_Store' -delete
 cp -f "${REPO_ROOT}/VERSION" "${STAGE}/VERSION"
 
@@ -43,7 +43,7 @@ find "${STAGE}/commands" -name '*.sh' -exec chmod +x {} +
 # Release assets: tarball of the staged tree, its checksum, + loose install.sh for direct curl.
 tar -czf "${TARBALL}" -C "${STAGE}" .
 sha256_of "${TARBALL}" >"${TARBALL}.sha256"
-cp -f "${REPO_ROOT}/src/install.sh" "${REPO_ROOT}/dist/install.sh"
+cp -f "${REPO_ROOT}/shell/install.sh" "${REPO_ROOT}/dist/install.sh"
 
 printf 'Staged:   %s\n' "${STAGE}"
 printf 'Tarball:  %s\n' "${TARBALL}"

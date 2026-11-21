@@ -1,0 +1,14 @@
+diff --git a/Library/Homebrew/download_strategy.rb b/Library/Homebrew/download_strategy.rb
+index 1c34521549..8af08385af 100644
+--- a/Library/Homebrew/download_strategy.rb
++++ b/Library/Homebrew/download_strategy.rb
+@@ -41,6 +41,9 @@ require "download_strategy/bazaar_download_strategy"
+ require "download_strategy/fossil_download_strategy"
+ require "download_strategy/download_strategy_detector"
+ 
++## custom download strategy to handle zscaler issues
++require "download_strategy/remote_relay_curl_download_strategy"
++
+ AbstractDownloadStrategy::HOMEBREW_CONTROLLED_STRATEGIES = T.let([
+   CurlApacheMirrorDownloadStrategy,
+   CurlDownloadStrategy,

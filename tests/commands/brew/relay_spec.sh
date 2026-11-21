@@ -35,26 +35,26 @@ setup_relay() {
 }
 
 It 'shows usage for help'
-When run script "${CHECKOUT}/src/commands/brew/relay.sh" help
+When run script "${CHECKOUT}/shell/commands/brew/relay.sh" help
 The status should be success
 The output should include 'Usage: rnfmac brew relay'
 End
 
 It 'rejects unknown flags with usage and non-zero exit'
-When run script "${CHECKOUT}/src/commands/brew/relay.sh" --bogus
+When run script "${CHECKOUT}/shell/commands/brew/relay.sh" --bogus
 The status should be failure
 The stderr should include 'Usage: rnfmac brew relay'
 End
 
 It 'rejects --force and --reset together'
-When run script "${CHECKOUT}/src/commands/brew/relay.sh" --force --reset
+When run script "${CHECKOUT}/shell/commands/brew/relay.sh" --force --reset
 The status should be failure
 The stderr should include 'mutually exclusive'
 End
 
 It 'exits with a clear message when the Homebrew prefix does not exist'
 export RNFMAC_TEST_HOMEBREW_PREFIX="${SANDBOX}/no-such-homebrew"
-When run script "${CHECKOUT}/src/commands/brew/relay.sh"
+When run script "${CHECKOUT}/shell/commands/brew/relay.sh"
 The status should be failure
 The output should include 'not compatible with the Homebrew relay'
 The output should include "${SANDBOX}/no-such-homebrew"
@@ -62,7 +62,7 @@ End
 
 It 'refuses to operate when the Homebrew prefix is not its own repo root'
 export RNFMAC_TEST_HOMEBREW_PREFIX="${HOMEBREW_PREFIX}/Library/Homebrew"
-When run script "${CHECKOUT}/src/commands/brew/relay.sh"
+When run script "${CHECKOUT}/shell/commands/brew/relay.sh"
 The status should be failure
 The output should include 'is not the root of its git repository'
 End
@@ -70,7 +70,7 @@ End
 It '--reset restores managed files to HEAD and removes the relay strategy'
 echo 'local modification' >>"${HOMEBREW_PREFIX}/Library/Homebrew/download_strategy.rb"
 touch "${HOMEBREW_PREFIX}/${RELAY_STRATEGY}"
-When run script "${CHECKOUT}/src/commands/brew/relay.sh" --reset
+When run script "${CHECKOUT}/shell/commands/brew/relay.sh" --reset
 The status should be success
 The output should include 'clean upstream base'
 The contents of file "${HOMEBREW_PREFIX}/Library/Homebrew/download_strategy.rb" should equal 'original: Library/Homebrew/download_strategy.rb'
@@ -78,7 +78,7 @@ The path "${HOMEBREW_PREFIX}/${RELAY_STRATEGY}" should not be exist
 End
 
 It 'reports conflicts and resets Homebrew back to its clean base rather than half-patching'
-When run script "${CHECKOUT}/src/commands/brew/relay.sh"
+When run script "${CHECKOUT}/shell/commands/brew/relay.sh"
 The status should be failure
 The stderr should include 'patch does not apply'
 The output should include 'reset Homebrew back to its clean base'
@@ -88,14 +88,14 @@ End
 
 It 'no-op mode skips with confirmation when already applied'
 git -C "${HOMEBREW_PREFIX}" -c user.name=spec -c user.email=spec@test commit -q --allow-empty -m 'rn-forge: apply Homebrew remote relay'
-When run script "${CHECKOUT}/src/commands/brew/relay.sh"
+When run script "${CHECKOUT}/shell/commands/brew/relay.sh"
 The status should be success
 The output should include 'already applied'
 End
 
 It '--force resets and unconditionally reapplies rather than short-circuiting when already applied'
 git -C "${HOMEBREW_PREFIX}" -c user.name=spec -c user.email=spec@test commit -q --allow-empty -m 'rn-forge: apply Homebrew remote relay'
-When run script "${CHECKOUT}/src/commands/brew/relay.sh" --force
+When run script "${CHECKOUT}/shell/commands/brew/relay.sh" --force
 The status should be failure
 The output should include 'Resetting and reapplying'
 The stderr should include 'patch does not apply'

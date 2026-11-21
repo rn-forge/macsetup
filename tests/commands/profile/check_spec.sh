@@ -74,7 +74,7 @@ The output should not include '[info]'
 End
 
 It 'prints usage for --help'
-When run script "${CHECKOUT}/src/commands/profile/check.sh" --help
+When run script "${CHECKOUT}/shell/commands/profile/check.sh" --help
 The status should be success
 The output should include 'usage: rnfmac profile check [--all] [--json]'
 End
