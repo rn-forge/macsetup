@@ -48,7 +48,26 @@ track = "feature/v1"
 [cli]
 name = "rnfmac"
 help = "macOS system configuration: bootstrap, sync, and the Homebrew Remote Relay."
-commands = []
+
+[[cli.commands]]
+name = "doctor"
+target = "rn_forge.macsetup.commands.doctor:doctor"
+
+[[cli.commands]]
+name = "system"
+target = "rn_forge.macsetup.commands.system:system_app"
+
+[[cli.commands]]
+name = "profile"
+target = "rn_forge.macsetup.commands.profile:profile_app"
+
+[[cli.commands]]
+name = "config"
+target = "rn_forge.macsetup.commands.config:config_app"
+
+[[cli.commands]]
+name = "brew"
+target = "rn_forge.macsetup.commands.brew:brew_app"
 
 # The lifecycle verbs mounted under the CLI, read by rn-forge-tooling's
 # `build_tool_app` and carried as written. `kiln apply` does not read it.

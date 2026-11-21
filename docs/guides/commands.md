@@ -92,6 +92,25 @@ Doctor-style checks use these exit codes:
 `brew diff --write` is a mutation rather than a report: it rewrites the current
 host's Brewfile from installed packages.
 
+### Python port (Phase 2)
+
+The Python `rnfmac` (`uv run rnfmac`, from `src/rn_forge/macsetup/`) already
+implements the read-only commands: `doctor`, `system doctor`, `profile check`,
+`brew diff` (including `--write`) and `config status`. The shell `rnfmac`
+remains the shipped product. The Python commands keep the exit codes above and
+the same checks and messages, and differ in presentation:
+
+- Human output puts category headings, healthy records and the summary on stdout
+  and warnings and errors on stderr, without the shkit timestamp prefix.
+- `--json` prints one document, `{"findings": [...], "summary": {...}}`, instead
+  of JSONL. Each finding's `code` is `<group>.<check>` and `details.status`
+  keeps the macsetup status (`ok`, `warning`, `drift`, `error`); drift is a
+  warning severity, and the exit code comes from the status.
+- `brew diff` and `doctor` list every package under "installed but not in
+  Brewfile"; the shell version kept only the first line.
+- An unknown flag is a usage error with exit code 2, not 1.
+- `$RNF_HOME` is honoured; the shell commands always used `~/.rn-forge`.
+
 ## Configuration
 
 ```sh

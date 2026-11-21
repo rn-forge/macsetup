@@ -39,6 +39,15 @@ Relay patches it will install, packaged under `assets/` and read through
 `rn_forge.macsetup.assets`. Those assets are copies of the files under
 `shell/profiles/shared/` and `shell/homebrew/`; a test fails if the two differ.
 
+The ported read-only commands follow one pattern: a Typer function in
+`commands/` over a service in `services/` that takes a `Layout` (paths resolved
+from `$HOME`/`$RNF_HOME`) and a `Runner`, the one seam for `git`, `brew`,
+`hostname` and `uv` (`domain/runner.py`; the real one is `adapters/process.py`).
+Tests replace the runner with `FakeRunner` from `tests/support.py`, which
+scripts everything but `git`, and an autouse fixture in `tests/conftest.py`
+points `HOME` and `RNF_HOME` into `tmp_path`. Run them with
+`RNF_HOME=/nonexistent-guard task validate`.
+
 Run `RNF_HOME=/nonexistent-guard mise run verify` for the shell product. The
 spec helper pins `RNF_HOME` and `HOME` to a sandbox, but a stray `RNF_HOME`
 exported in your shell must never reach an installer.
