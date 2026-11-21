@@ -41,6 +41,7 @@ nav:
       - Shell API: reference/index.md
   - Plans:
       - Agentkit alignment: specs/agentkit-alignment.md
+      - Python tool port: specs/python-tool-port.md
 plugins:
   - search
 markdown_extensions:
