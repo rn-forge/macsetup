@@ -19,14 +19,14 @@
 # shkit release tarball fetched out-of-band — it's extracted and its
 # install.sh run locally instead of curling:
 #     RNF_SHKIT_INSTALL_BUNDLE=./shkit.tar.gz . ./install.sh
-# Installs into ~/.rn-forge/macsetup/<version>/, clones macsetup-config into the
+# Installs into $RNF_HOME/macsetup/<version>/ ($RNF_HOME defaults to ~/.rn-forge), clones macsetup-config into the
 # persistent product home, and links rnfmac. It does not touch .zprofile/.zshrc or
 # run bootstrap/sync; those stay with `rnfmac system init` / `rnfmac sync`.
 # Sourced contract: no `set -e`, no `exit` — a failure must never kill the caller's shell.
 # Version: 3.0
 # Author: Rohit Narayanan
 
-RNF_HOME="${HOME}/.rn-forge"
+RNF_HOME="${RNF_HOME:-${HOME}/.rn-forge}"
 RNF_GITHUB_ORG="${RNF_GITHUB_ORG:-rn-forge}"
 RNFMAC_CONFIG_REPO_URL="${RNFMAC_CONFIG_REPO_URL:-https://github.com/${RNF_GITHUB_ORG}/macsetup-config.git}"
 
@@ -44,14 +44,14 @@ SELF_PATH="$(readlink -f "$0" 2>/dev/null || echo "$0")"
 if [[ -n "${RNF_SHKIT_INSTALL_BUNDLE:-}" ]]; then
   _rnf_shkit_bundle_dir="$(mktemp -d)"
   if tar -xzf "${RNF_SHKIT_INSTALL_BUNDLE}" -C "${_rnf_shkit_bundle_dir}"; then
-    bash "${_rnf_shkit_bundle_dir}/install.sh"
+    RNF_HOME="${RNF_HOME}" bash "${_rnf_shkit_bundle_dir}/install.sh"
   else
     echo "install.sh: failed to extract RNF_SHKIT_INSTALL_BUNDLE=${RNF_SHKIT_INSTALL_BUNDLE}" >&2
   fi
   rm -rf "${_rnf_shkit_bundle_dir}"
   unset _rnf_shkit_bundle_dir
 else
-  curl --proto '=https' --tlsv1.2 -fsSL "https://github.com/${RNF_GITHUB_ORG}/shkit/releases/latest/download/install.sh" | bash
+  curl --proto '=https' --tlsv1.2 -fsSL "https://github.com/${RNF_GITHUB_ORG}/shkit/releases/latest/download/install.sh" | RNF_HOME="${RNF_HOME}" bash
 fi
 _rnf_shkit_loaded=1
 if [[ -f "${RNF_HOME}/shkit/current/shkit.sh" ]]; then

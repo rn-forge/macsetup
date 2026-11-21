@@ -7,6 +7,9 @@ FIXTURES="${SHELLSPEC_PROJECT_ROOT}/tests/fixtures"
 setup_sandbox() {
   SANDBOX="$(mktemp -d "${SHELLSPEC_TMPBASE}/macsetup.XXXXXX")"
   export HOME="${SANDBOX}/home"
+  # install.sh honours an inherited RNF_HOME; pin it into the sandbox so a
+  # developer's exported RNF_HOME never points installs at the real home
+  export RNF_HOME="${HOME}/.rn-forge"
   mkdir -p "${HOME}/.rn-forge" "${HOME}/.oh-my-zsh/custom/themes"
   printf 'source $ZSH/oh-my-zsh.sh\n' >"${HOME}/.zshrc"
 

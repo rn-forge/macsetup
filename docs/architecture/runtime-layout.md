@@ -2,10 +2,11 @@
 
 ## Product home
 
-`~/.rn-forge` (`RNF_HOME`) is the shared runtime home for the rn-forge product family. Each product uses versioned installations and a stable `current` symlink:
+`$RNF_HOME` (`~/.rn-forge` when unset or empty) is the shared runtime home for the rn-forge product family. Its normative layout is the contract [The rn-forge home](https://github.com/rn-forge/pykit/blob/main/packages/rn-forge-tooling/docs/guides/home.md), owned by pykit. macsetup's own parts of it are `macsetup/<version>/`, `macsetup/config/` and `macsetup/profile.zsh`. Each product uses versioned installations and a stable `current` symlink:
 
 ```text
 ~/.rn-forge/
+├── env.sh
 ├── bin/
 │   └── rnfmac -> ../macsetup/current/rnfmac.sh
 ├── completions/
@@ -35,7 +36,7 @@ An upgrade pulls the persistent configuration checkout after moving `current`, b
 
 ## Runtime dependency
 
-Every installed command sources `~/.rn-forge/shkit/current/shkit.sh` by absolute path. `shkit` supplies logging and diagnostic helpers and is not vendored into macsetup. The installer is the only component that installs it, either through shkit's installer or from `RNF_SHKIT_INSTALL_BUNDLE` on a blocked network. Shell-profile configuration owns adding `~/.rn-forge/bin` to `PATH`.
+Every installed command sources `~/.rn-forge/shkit/current/shkit.sh` by absolute path. `shkit` supplies logging and diagnostic helpers and is not vendored into macsetup. The installer is the only component that installs it, either through shkit's installer or from `RNF_SHKIT_INSTALL_BUNDLE` on a blocked network. The home's `env.sh` puts `bin/` on `PATH` and `completions/` on `fpath`. shkit's installer writes it, and the rendered `profile.zsh` sources it, falling back to its own `PATH`/`fpath` lines on a host that has no `env.sh` yet.
 
 ## Distribution payload
 
