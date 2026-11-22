@@ -98,7 +98,8 @@ The Python `rnfmac` (`uv run rnfmac`, from `src/rn_forge/macsetup/`) already
 implements the read-only commands: `doctor`, `system doctor`, `profile check`,
 `brew diff` (including `--write`) and `config status`. Phase 3 adds the commands
 that change the machine: so far `config pull`, `config push`, `config reset`,
-`profile sync` and `brew sync`. `brew sync` streams brew's progress live and
+`profile sync`, `brew sync`, `system sync` and `system init` (which leaves
+Homebrew and uv to the bootstrap). `brew sync` streams brew's progress live and
 stops at the first failing `brew` command with its exit code. The shell `rnfmac`
 remains the shipped product. The Python commands keep the exit codes above and
 the same checks and messages, and differ in presentation:

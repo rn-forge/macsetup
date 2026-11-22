@@ -169,7 +169,10 @@ sonar_exclusions = []
 # Paths Sonar counts but does not expect to have coverage. Changing the list
 # rewrites the Sonar properties on `kiln apply`.
 # Default: [].
-sonar_coverage_exclusions = []
+sonar_coverage_exclusions = [
+    "src/rn_forge/macsetup/services/system_sync.py",
+    "src/rn_forge/macsetup/services/system_init.py",
+]
 
 # Extra jobs, each calling one reusable workflow after `validate`. Changing
 # the list rewrites `ci.yml` on `kiln apply`.

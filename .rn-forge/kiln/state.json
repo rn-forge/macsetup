@@ -346,7 +346,7 @@
     },
     "sonar-project.properties": {
       "begin_marker": null,
-      "content_hash": "9dafa185ae2244e7039bfbb8391bdc34220d03feb2b6bd739a0df2c11462ce7d",
+      "content_hash": "240667e4b119d123f29015223c51fe6528bfae6788398bcea0196149d08b9847",
       "end_marker": null,
       "key_paths": null,
       "kind": "managed",
@@ -418,7 +418,7 @@
     }
   },
   "metadata": {
-    "config_hash": "f9704148757f4e13d317d50a03f5d13b4d51a7523afd912db112579e6e10f6de",
+    "config_hash": "d3e643352a7b473a3a082864de82779c5961bf30be3a535d5e6f1f42a589860c",
     "config_provenance": {
       "archetype.python-tool.module": {
         "layer": "flags",
@@ -449,8 +449,11 @@
         "value": true
       },
       "ci.sonar_coverage_exclusions": {
-        "layer": "defaults",
-        "value": []
+        "layer": "repo",
+        "value": [
+          "src/rn_forge/macsetup/services/system_sync.py",
+          "src/rn_forge/macsetup/services/system_init.py"
+        ]
       },
       "ci.sonar_exclusions": {
         "layer": "defaults",
