@@ -28,7 +28,12 @@ def isolated_environment(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Non
     home.mkdir()
     monkeypatch.setenv("HOME", str(home))
     monkeypatch.setenv("RNF_HOME", str(home / ".rn-forge"))
-    for name in ("ZSH_CUSTOM", "RNFMAC_CONFIG_REPO_URL", "RNF_GITHUB_ORG"):
+    for name in (
+        "ZSH_CUSTOM",
+        "RNFMAC_CONFIG_REPO_URL",
+        "RNF_GITHUB_ORG",
+        "RNFMAC_TEST_HOMEBREW_PREFIX",
+    ):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("GIT_CONFIG_GLOBAL", os.devnull)
     monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "1")

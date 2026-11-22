@@ -20,12 +20,21 @@ class Layout:
 
     user_home: Path
     rnf_home: Path
+    homebrew_prefix: Path = Path("/opt/homebrew")
+    """The Homebrew install the relay patches (Apple Silicon only)."""
 
     @classmethod
     def from_env(cls, env: Mapping[str, str]) -> Layout:
-        """Resolve the layout: `$RNF_HOME`, or `~/.rn-forge` when it is unset or empty."""
+        """Resolve the layout: `$RNF_HOME`, or `~/.rn-forge` when it is unset or empty.
+
+        `$RNFMAC_TEST_HOMEBREW_PREFIX` is a test seam for the Homebrew prefix.
+        """
         user_home = Path(env.get("HOME") or Path.home())
-        return cls(user_home, Path(env.get("RNF_HOME") or user_home / ".rn-forge"))
+        return cls(
+            user_home,
+            Path(env.get("RNF_HOME") or user_home / ".rn-forge"),
+            Path(env.get("RNFMAC_TEST_HOMEBREW_PREFIX") or "/opt/homebrew"),
+        )
 
     @property
     def product_home(self) -> Path:
