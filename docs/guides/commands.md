@@ -92,15 +92,16 @@ Doctor-style checks use these exit codes:
 `brew diff --write` is a mutation rather than a report: it rewrites the current
 host's Brewfile from installed packages.
 
-### Python port (Phase 2)
+### Python port (Phase 2 and 3)
 
 The Python `rnfmac` (`uv run rnfmac`, from `src/rn_forge/macsetup/`) already
 implements the read-only commands: `doctor`, `system doctor`, `profile check`,
 `brew diff` (including `--write`) and `config status`. Phase 3 adds the commands
-that change the machine: so far `brew sync`, which streams brew's progress live
-and stops at the first failing `brew` command with its exit code. The shell
-`rnfmac` remains the shipped product. The Python commands keep the exit codes
-above and the same checks and messages, and differ in presentation:
+that change the machine: so far `profile sync` and `brew sync`. `brew sync`
+streams brew's progress live and stops at the first failing `brew` command with
+its exit code. The shell `rnfmac` remains the shipped product. The Python
+commands keep the exit codes above and the same checks and messages, and differ
+in presentation:
 
 - Human output puts category headings, healthy records and the summary on stdout
   and warnings and errors on stderr, without the shkit timestamp prefix.
@@ -110,6 +111,10 @@ above and the same checks and messages, and differ in presentation:
   warning severity, and the exit code comes from the status.
 - `brew diff` and `doctor` list every package under "installed but not in
   Brewfile"; the shell version kept only the first line.
+- `profile sync` writes the same files as the shell version, but copies the zsh
+  theme and keybindings from the package instead of linking the theme into the
+  shell install (an existing theme symlink is replaced), and backs up to
+  `$RNF_HOME/backup/macsetup/` unless the file matches the newest backup.
 - An unknown flag is a usage error with exit code 2, not 1.
 - `$RNF_HOME` is honoured; the shell commands always used `~/.rn-forge`.
 

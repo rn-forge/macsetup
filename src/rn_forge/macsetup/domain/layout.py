@@ -43,6 +43,27 @@ class Layout:
         return self.product_home / "profile.zsh"
 
     @property
+    def backup_home(self) -> Path:
+        """Where `profile sync` backs up the files it changes."""
+        return self.rnf_home / "backup" / "macsetup"
+
+    @property
+    def theme_destination(self) -> Path:
+        """Where the oh-my-zsh theme is installed."""
+        return (
+            self.user_home
+            / ".oh-my-zsh"
+            / "custom"
+            / "themes"
+            / "rohitnarayanan.zsh-theme"
+        )
+
+    @property
+    def keybindings_destination(self) -> Path:
+        """Where the macOS keybindings are installed."""
+        return self.user_home / "Library" / "KeyBindings" / "DefaultKeyBinding.dict"
+
+    @property
     def marker(self) -> str:
         """The marker line that opens macsetup's block in an rc file."""
         return "#################### macsetup"
