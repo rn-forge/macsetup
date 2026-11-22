@@ -11,6 +11,7 @@ sections below are derived from the epic, feature and release pages by
 
 | Release | Status | Features |
 | -- | -- | -- |
+| [Release 1 — Python rnfmac](../releases/release-1/index.md) | in progress | 2 Active · 1 New · 2 Closed |
 
 ## Backlog
 

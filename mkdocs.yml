@@ -81,6 +81,14 @@ nav:
   - Specs:
       - specs/index.md
       - Epics: specs/epics/index.md
+      - E1–E10:
+          - E1 — Port rnfmac to a kiln python-tool:
+              - specs/epics/E1-python-tool-port/index.md
+              - "F1.1 — Phase 0: source the rn-forge home's env.sh": specs/epics/E1-python-tool-port/F1.1-home-env-sh.md
+              - 'F1.2 — Phase 1: kiln scaffold beside the shell product': specs/epics/E1-python-tool-port/F1.2-kiln-scaffold.md
+              - 'F1.3 — Phase 2: port the read-only commands': specs/epics/E1-python-tool-port/F1.3-read-only-commands.md
+              - 'F1.4 — Phase 3: port the commands that change the machine': specs/epics/E1-python-tool-port/F1.4-machine-changing-commands.md
+              - 'F1.5 — Phase 4: cutover': specs/epics/E1-python-tool-port/F1.5-cutover.md
       - 'Plan: adopting agentkit practices in macsetup': specs/agentkit-alignment.md
       - 'Plan: macsetup becomes a kiln `python-tool`': specs/python-tool-port.md
       - Ideas:
