@@ -10,8 +10,9 @@ from rn_forge.macsetup.commands import output, wiring
 from rn_forge.macsetup.commands.output import JsonOption
 from rn_forge.macsetup.domain.runner import Result
 from rn_forge.macsetup.services.brew_diff import brew_diff, write_brewfile
+from rn_forge.macsetup.services.brew_sync import brew_sync
 
-__all__ = ["brew_app", "diff"]
+__all__ = ["brew_app", "diff", "sync"]
 
 
 def show_stderr(result: Result) -> None:
@@ -50,3 +51,14 @@ def diff(all: bool = False, write: bool = False, json: JsonOption = False) -> No
 brew_app = CliApp("brew", "Homebrew packages and the Brewfile.")
 """The `brew` namespace; each command is registered on it."""
 brew_app.command(name="diff")(diff)
+
+
+def sync() -> None:
+    """Install, then clean up, Homebrew packages against the host Brewfile."""
+    run = wiring.runner()
+    layout = wiring.layout()
+    host = wiring.host(run)
+    brew_sync(layout, host, run)
+
+
+brew_app.command(name="sync")(sync)

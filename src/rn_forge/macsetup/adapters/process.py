@@ -30,6 +30,15 @@ class SubprocessRunner:
             return Result(NOT_FOUND, "", str(error))
         return Result(done.returncode, done.stdout, done.stderr)
 
+    def stream(self, args: Sequence[str], *, cwd: Path | None = None) -> int:
+        """Run *args* attached to this terminal, returning its exit code."""
+        try:
+            return subprocess.run(
+                list(args), cwd=cwd, check=False
+            ).returncode  # argv list, no shell
+        except OSError:
+            return NOT_FOUND
+
     def which(self, name: str) -> bool:
         """Whether *name* is an executable on `PATH`."""
         return shutil.which(name) is not None

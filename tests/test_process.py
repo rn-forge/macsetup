@@ -26,3 +26,11 @@ def test_a_command_that_cannot_start_is_not_found():
 def test_which_finds_only_real_executables():
     assert SubprocessRunner().which("git")
     assert not SubprocessRunner().which("rnfmac-no-such-tool")
+
+
+def test_stream_returns_the_exit_code():
+    assert SubprocessRunner().stream(["sh", "-c", "exit 3"]) == 3
+
+
+def test_stream_reports_a_missing_command():
+    assert SubprocessRunner().stream(["/nonexistent/tool"]) == NOT_FOUND

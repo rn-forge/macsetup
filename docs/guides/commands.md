@@ -96,9 +96,11 @@ host's Brewfile from installed packages.
 
 The Python `rnfmac` (`uv run rnfmac`, from `src/rn_forge/macsetup/`) already
 implements the read-only commands: `doctor`, `system doctor`, `profile check`,
-`brew diff` (including `--write`) and `config status`. The shell `rnfmac`
-remains the shipped product. The Python commands keep the exit codes above and
-the same checks and messages, and differ in presentation:
+`brew diff` (including `--write`) and `config status`. Phase 3 adds the commands
+that change the machine: so far `brew sync`, which streams brew's progress live
+and stops at the first failing `brew` command with its exit code. The shell
+`rnfmac` remains the shipped product. The Python commands keep the exit codes
+above and the same checks and messages, and differ in presentation:
 
 - Human output puts category headings, healthy records and the summary on stdout
   and warnings and errors on stderr, without the shkit timestamp prefix.

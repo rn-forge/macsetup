@@ -43,6 +43,16 @@ class FakeRunner:
             return self._git.run(args, cwd=cwd)
         return Result(NOT_FOUND, "", f"{args[0]}: not found")
 
+    def stream(self, args: Sequence[str], *, cwd: Path | None = None) -> int:
+        self.calls.append(tuple(args))
+        for size in range(len(args), 0, -1):
+            script = self.scripts.get(tuple(args[:size]))
+            if script is not None:
+                return (script(args) if callable(script) else script).returncode
+        if args[0] == "git":
+            return self._git.run(args, cwd=cwd).returncode
+        return NOT_FOUND
+
     def which(self, name: str) -> bool:
         return name in self.tools
 

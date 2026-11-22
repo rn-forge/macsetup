@@ -37,6 +37,13 @@ class Runner(Protocol):
         """
         ...
 
+    def stream(self, args: Sequence[str], *, cwd: Path | None = None) -> int:
+        """Run *args* with inherited stdin, stdout and stderr, so its progress shows live.
+
+        Returns the exit code, or `NOT_FOUND` when the command cannot be started.
+        """
+        ...
+
     def which(self, name: str) -> bool:
         """Whether *name* is an executable on `PATH`."""
         ...
