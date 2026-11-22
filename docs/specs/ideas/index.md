@@ -10,3 +10,4 @@ epic or feature and deletes both; a dropped idea's row and page are deleted too.
 
 | Idea | Summary | Source |
 | -- | -- | -- |
+| Short flags for `config push` | Restore `rnfmac config push -m <message>` (or a positional message) once `rn-forge-cli` can declare a custom option or argument without importing `typer`. | S1.4.1 |

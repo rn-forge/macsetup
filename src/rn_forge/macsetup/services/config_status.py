@@ -111,7 +111,9 @@ class ConfigStatus:
                 shown = self._git("diff", "--no-index", "--", "/dev/null", name)
                 self._block(shown.stdout)
         self._text("")
-        self.lines.append(("notice", "publish with 'rnfmac config push -m <message>'"))
+        self.lines.append(
+            ("notice", "publish with 'rnfmac config push --message <message>'")
+        )
 
 
 def config_status(layout: Layout, runner: Runner) -> list[tuple[str, str]]:

@@ -59,7 +59,7 @@ installed packages, review the resulting diff, then publish it explicitly:
 
 ```sh
 rnfmac config status
-rnfmac config push -m "Update host config"
+rnfmac config push --message "Update host config"
 ```
 
 `rnfmac config reset --force` is the only command that discards local
