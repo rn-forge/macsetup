@@ -33,6 +33,7 @@ def isolated_environment(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Non
         "RNFMAC_CONFIG_REPO_URL",
         "RNF_GITHUB_ORG",
         "RNFMAC_TEST_HOMEBREW_PREFIX",
+        "RNFMAC_SYNC_PROFILES_ONLY",
     ):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("GIT_CONFIG_GLOBAL", os.devnull)
@@ -45,6 +46,14 @@ def isolated_environment(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Non
     previous = console.mode
     yield
     console.set_mode(previous if isinstance(previous, OutputMode) else OutputMode.PLAIN)
+
+
+@pytest.fixture(autouse=True)
+def applied_environment(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, str]]:
+    """Record what commands apply to the process environment, so no test changes the real one."""
+    seen: list[dict[str, str]] = []
+    monkeypatch.setattr(wiring, "apply_environment", lambda env: seen.append(dict(env)))
+    return seen
 
 
 @pytest.fixture

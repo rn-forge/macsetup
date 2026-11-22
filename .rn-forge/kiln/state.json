@@ -354,7 +354,7 @@
     },
     "src/rn_forge/macsetup/cli.toml": {
       "begin_marker": null,
-      "content_hash": "89907045a55c7a0aa0239287c8a789f211d7a247b43747b34b8f055a1c4d22a4",
+      "content_hash": "7543b1fc5ea29b0377a51b2dec7a92dc950b2a4a21db52543f58417184d01a95",
       "end_marker": null,
       "key_paths": null,
       "kind": "managed",
@@ -418,7 +418,7 @@
     }
   },
   "metadata": {
-    "config_hash": "d3e643352a7b473a3a082864de82779c5961bf30be3a535d5e6f1f42a589860c",
+    "config_hash": "b890a7267354a743de419ab6b338b3e73dbe9d9d3c725846c1e237c7f7b7f761",
     "config_provenance": {
       "archetype.python-tool.module": {
         "layer": "flags",
@@ -462,6 +462,10 @@
       "cli.commands": {
         "layer": "repo",
         "value": [
+          {
+            "name": "sync",
+            "target": "rn_forge.macsetup.commands.sync:sync"
+          },
           {
             "name": "doctor",
             "target": "rn_forge.macsetup.commands.doctor:doctor"

@@ -12,7 +12,7 @@ from rn_forge.macsetup.adapters.process import SubprocessRunner
 from rn_forge.macsetup.domain.layout import Layout, host_name
 from rn_forge.macsetup.domain.runner import Runner
 
-__all__ = ["environment", "host", "layout", "runner"]
+__all__ = ["apply_environment", "environment", "host", "layout", "runner"]
 
 
 def runner() -> Runner:
@@ -23,6 +23,11 @@ def runner() -> Runner:
 def environment() -> Mapping[str, str]:
     """The process environment."""
     return os.environ
+
+
+def apply_environment(env: Mapping[str, str]) -> None:
+    """Merge *env* into the process environment, so later steps see it."""
+    os.environ.update(env)
 
 
 def layout() -> Layout:

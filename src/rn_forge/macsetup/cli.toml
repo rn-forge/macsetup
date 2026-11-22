@@ -4,6 +4,10 @@ name = "rnfmac"
 help = "macOS system configuration: bootstrap, sync, and the Homebrew Remote Relay."
 
 [[cli.commands]]
+name = "sync"
+target = "rn_forge.macsetup.commands.sync:sync"
+
+[[cli.commands]]
 name = "doctor"
 target = "rn_forge.macsetup.commands.doctor:doctor"
 

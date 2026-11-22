@@ -12,11 +12,13 @@ from rn_forge.commons.exceptions import AppException
 
 from rn_forge.macsetup import assets
 from rn_forge.macsetup.domain.layout import Layout
+from rn_forge.macsetup.domain.runner import Runner
 from rn_forge.macsetup.services.profile_check import render_profile
 
 __all__ = [
     "backup",
     "install_keybindings",
+    "profile_environment",
     "profile_sync",
     "render_host_profile",
     "set_zsh_theme",
@@ -156,3 +158,29 @@ def profile_sync(layout: Layout, host: str) -> None:
     update_zshrc(layout)
     set_zsh_theme(layout)
     install_keybindings(layout)
+
+
+def profile_environment(layout: Layout, runner: Runner) -> tuple[dict[str, str], str]:
+    """Source the rendered profile in zsh and return the environment it leaves behind.
+
+    Returns:
+        The exported variables, and the profile's own output (stderr).
+
+    Raises:
+        AppException: Sourcing the profile failed.
+    """
+    result = runner.run(
+        ["zsh", "-c", 'source "$1" >&2 && env -0', "_", str(layout.rendered_profile)]
+    )
+    if not result.ok:
+        raise AppException(
+            "sourcing {} failed: {}",
+            layout.rendered_profile,
+            result.stderr.strip(),
+        )
+    env: dict[str, str] = {}
+    for entry in result.stdout.split("\0"):
+        name, sep, value = entry.partition("=")
+        if sep and name:
+            env[name] = value
+    return env, result.stderr
