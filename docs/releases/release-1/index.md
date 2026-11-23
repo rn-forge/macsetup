@@ -24,7 +24,7 @@ the shell payload retired.
 | [F1.2 — Phase 1: kiln scaffold beside the shell product](../../specs/epics/E1-python-tool-port/F1.2-kiln-scaffold.md) | E1 | Closed |
 | [F1.3 — Phase 2: port the read-only commands](../../specs/epics/E1-python-tool-port/F1.3-read-only-commands.md) | E1 | Closed |
 | [F1.4 — Phase 3: port the commands that change the machine](../../specs/epics/E1-python-tool-port/F1.4-machine-changing-commands.md) | E1 | Active |
-| [F1.5 — Phase 4: cutover](../../specs/epics/E1-python-tool-port/F1.5-cutover.md) | E1 | New |
+| [F1.5 — Phase 4: cutover](../../specs/epics/E1-python-tool-port/F1.5-cutover.md) | E1 | Active |
 
 <!-- END derived scope -->
 
