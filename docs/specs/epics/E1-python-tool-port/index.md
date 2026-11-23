@@ -13,7 +13,7 @@
 | [F1.2 — Phase 1: kiln scaffold beside the shell product](F1.2-kiln-scaffold.md) | Closed | release-1 | 2 Closed |
 | [F1.3 — Phase 2: port the read-only commands](F1.3-read-only-commands.md) | Closed | release-1 | 5 Closed |
 | [F1.4 — Phase 3: port the commands that change the machine](F1.4-machine-changing-commands.md) | Active | release-1 | 6 Closed |
-| [F1.5 — Phase 4: cutover](F1.5-cutover.md) | Active | release-1 | 1 Active · 2 New |
+| [F1.5 — Phase 4: cutover](F1.5-cutover.md) | Active | release-1 | 2 New · 1 Closed |
 
 <!-- END derived features -->
 
