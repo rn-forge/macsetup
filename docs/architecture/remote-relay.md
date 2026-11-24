@@ -16,12 +16,13 @@ artifact back, and removes the temporary file.
 
 ## Applying the relay
 
-`rnfmac brew relay` applies the payload from `shell/homebrew/` to the Apple
-Silicon Homebrew installation at `/opt/homebrew`:
+`rnfmac brew relay` applies the payload from
+`src/rn_forge/macsetup/assets/homebrew/` to the Apple Silicon Homebrew
+installation at `/opt/homebrew`:
 
-- `shell/homebrew/patches/` patches Homebrew's download strategy, strategy
-  detector, and vendored-download command.
-- `shell/homebrew/download_strategy/remote_relay_curl_download_strategy.rb`
+- `src/rn_forge/macsetup/assets/homebrew/patches/` patches Homebrew's download
+  strategy, strategy detector, and vendored-download command.
+- `src/rn_forge/macsetup/assets/homebrew/download_strategy/remote_relay_curl_download_strategy.rb`
   provides the strategy implementation.
 
 The default operation resets Homebrew to a clean upstream base and reapplies

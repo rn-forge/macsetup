@@ -154,9 +154,7 @@ sonar = true
 # `kiln apply`.
 # One of: "tag-exists", "pypi", "nx-dispatch", "npm", "none".
 # Default: `tag-exists`; `nx-dispatch` for `node-lib`.
-# The shell product still ships through .github/workflows/shell.yml until the
-# Phase 4 cutover (docs/specs/python-tool-port.md), so no release job yet.
-release = "none"
+release = "tag-exists"
 
 # When CI runs `kiln doctor --full`: on pushes to the default branch and on
 # dispatch, or on every run. Changing it rewrites the validate job in

@@ -2,34 +2,29 @@
 
 ## Install
 
-Install the latest release on a fresh machine:
+Install on a fresh machine:
 
 ```sh
-. <(curl -fsSL https://github.com/rn-forge/macsetup/releases/latest/download/install.sh)
+. <(curl -fsSL https://raw.githubusercontent.com/rn-forge/macsetup/main/bootstrap.sh)
 ```
 
-Install from a checkout or unpacked distribution:
+`bootstrap.sh` installs Homebrew and uv when missing, then runs
+`rnfmac self install`. Pass `--force` to reinstall:
 
 ```sh
-. shell/install.sh
+. ./bootstrap.sh --force
 ```
 
-Install a release archive already on disk:
+On a blocked network, copy `bootstrap.sh` and a release archive across, then
+install from the archive, naming its version:
 
 ```sh
-. install.sh --archive ~/Downloads/macsetup.tar.gz
+. ./bootstrap.sh --archive ~/Downloads/macsetup.tar.gz --version 3.0.0
 ```
-
-`--archive` takes precedence over checkout detection. A sibling `.sha256` is
-verified when present; otherwise installation continues with a warning. Set
-`RNFMAC_CONFIG_REPO_URL` before installation to override the default
-`https://github.com/rn-forge/macsetup-config.git`.
 
 Installation creates the
-[versioned runtime layout](../architecture/runtime-layout.md), clones the
-persistent configuration checkout, and exposes `rnfmac` in the current shell.
-Add `~/.rn-forge/bin` to `PATH` in `.zprofile` to persist it. The installer does
-not modify shell rc files or apply machine configuration.
+[versioned runtime layout](../architecture/runtime-layout.md) and exposes
+`rnfmac` in the current shell. It does not apply machine configuration.
 
 ## Bootstrap and synchronize
 
@@ -92,36 +87,6 @@ Doctor-style checks use these exit codes:
 `brew diff --write` is a mutation rather than a report: it rewrites the current
 host's Brewfile from installed packages.
 
-### Python port (Phase 2 and 3)
-
-The Python `rnfmac` (`uv run rnfmac`, from `src/rn_forge/macsetup/`) already
-implements the read-only commands: `doctor`, `system doctor`, `profile check`,
-`brew diff` (including `--write`) and `config status`. Phase 3 adds the commands
-that change the machine: so far `config pull`, `config push`, `config reset`,
-`profile sync`, `brew sync`, `brew relay`, `system sync`, `system init` (which
-leaves Homebrew and uv to the bootstrap) and the top-level `sync`. `brew sync`
-streams brew's progress live and stops at the first failing `brew` command with
-its exit code. The shell `rnfmac` remains the shipped product. The Python
-commands keep the exit codes above and the same checks and messages, and differ
-in presentation:
-
-- Human output puts category headings, healthy records and the summary on stdout
-  and warnings and errors on stderr, without the shkit timestamp prefix.
-- `--json` prints one document, `{"findings": [...], "summary": {...}}`, instead
-  of JSONL. Each finding's `code` is `<group>.<check>` and `details.status`
-  keeps the macsetup status (`ok`, `warning`, `drift`, `error`); drift is a
-  warning severity, and the exit code comes from the status.
-- `brew diff` and `doctor` list every package under "installed but not in
-  Brewfile"; the shell version kept only the first line.
-- `profile sync` writes the same files as the shell version, but copies the zsh
-  theme and keybindings from the package instead of linking the theme into the
-  shell install (an existing theme symlink is replaced), and backs up to
-  `$RNF_HOME/backup/macsetup/` unless the file matches the newest backup.
-- An unknown flag is a usage error with exit code 2, not 1. `config push` takes
-  the commit message as `--message` (there is no `-m`), and an empty message
-  is an error.
-- `$RNF_HOME` is honoured; the shell commands always used `~/.rn-forge`.
-
 ## Configuration
 
 ```sh
@@ -138,18 +103,22 @@ rnfmac config reset --force
 - `reset --force` discards local changes and resets to `origin/main`; it refuses
   to discard anything without `--force`.
 
-## Releases and cleanup
+## The rnfmac self lifecycle
 
 ```sh
-rnfmac version
-rnfmac upgrade
-rnfmac upgrade --archive ~/Downloads/macsetup.tar.gz
-rnfmac cleanup
+rnfmac self install
+rnfmac self upgrade
+rnfmac self uninstall
+rnfmac self cleanup
+rnfmac self status
+rnfmac self doctor
 ```
 
-`upgrade` installs the latest release, or a specific local archive that may be
-older, then pulls configuration without applying it. `cleanup` removes all
-installed macsetup versions except the target of `current`.
+These verbs come from `rn-forge-tooling`: `install` and `upgrade` manage the
+versioned installation, `cleanup` removes every installed version except the
+target of `current`, `uninstall` removes the product directory, and `status` and
+`doctor` report on the installation. An upgrade never applies configuration; run
+`rnfmac sync` after reviewing it.
 
 ## Homebrew Remote Relay
 
@@ -163,5 +132,4 @@ rnfmac brew relay --regen
 See [Homebrew Remote Relay](../architecture/remote-relay.md) for its design,
 environment variables, and patch-authoring workflow.
 
-Run `rnfmac --help` to list the commands and groups discovered by the
-dispatcher.
+Run `rnfmac --help` to list the commands and groups.

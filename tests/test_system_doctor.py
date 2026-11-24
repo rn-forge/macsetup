@@ -29,7 +29,14 @@ def test_hides_healthy_records_by_default(sandbox, use_runner, rnfmac):
     assert "Homebrew 4.1.0" not in result.out
     assert "nvm present" not in result.out
     assert "macsetup current ->" not in result.out
-    assert "13 ok, 0 warning, 0 drift, 0 error" in result.out
+    assert "12 ok, 0 warning, 0 drift, 0 error" in result.out
+
+
+def test_reports_no_shkit_finding(sandbox, use_runner, rnfmac):
+    healthy(sandbox, use_runner)
+    result = rnfmac("system", "doctor", "--json")
+    payload = json.loads(result.out)
+    assert not [f for f in payload["findings"] if "shkit" in f["code"]]
 
 
 def test_all_includes_healthy_records(sandbox, use_runner, rnfmac):
@@ -46,7 +53,6 @@ def test_all_includes_healthy_records(sandbox, use_runner, rnfmac):
         "macsetup current ->",
         "bin/rnfmac linked",
         "completions/_rnfmac linked",
-        "shkit installed and sourceable",
         "Homebrew is on a clean base",
     ):
         assert text in result.out
@@ -58,21 +64,18 @@ def test_exits_2_when_configured_state_has_drifted(sandbox, use_runner, rnfmac):
     result = rnfmac("system", "doctor")
     assert result.code == 2
     assert "nvm not found" in result.err
-    assert "12 ok, 0 warning, 1 drift, 0 error" in result.out
+    assert "11 ok, 0 warning, 1 drift, 0 error" in result.out
 
 
 def test_exits_1_when_the_runtime_layout_is_broken(sandbox, use_runner, rnfmac):
-    # the spec removed shkit.sh from an installed layout; here nothing is installed,
-    # so current, bin/rnfmac and shkit are errors and the completion link is drift
+    # removing current, bin/rnfmac and the completion link: two errors and one drift
     healthy(sandbox, use_runner)
-    (sandbox.rnf_home / "shkit" / "current" / "shkit.sh").unlink()
     (sandbox.rnf_home / "bin" / "rnfmac").unlink()
     (sandbox.rnf_home / "macsetup" / "current").unlink()
     (sandbox.rnf_home / "completions" / "_rnfmac").unlink()
     result = rnfmac("system", "doctor")
     assert result.code == 1
-    assert "shkit not found at" in result.flat
-    assert "9 ok, 0 warning, 1 drift, 3 error" in result.out
+    assert "9 ok, 0 warning, 1 drift, 2 error" in result.out
 
 
 def test_reports_a_relay_patched_homebrew_with_all(sandbox, use_runner, rnfmac):
@@ -150,7 +153,7 @@ def test_relay_state_is_skipped_when_the_prefix_is_not_a_git_repo(
     result = rnfmac("system", "doctor", "--all")
     assert result.code == 0
     assert "relay" not in result.out
-    assert "12 ok" in result.out
+    assert "11 ok" in result.out
 
 
 def test_json_reports_findings_with_their_macsetup_status(sandbox, use_runner, rnfmac):
@@ -165,4 +168,4 @@ def test_json_reports_findings_with_their_macsetup_status(sandbox, use_runner, r
         "group": "system",
         "category": "toolchain",
     }
-    assert payload["summary"] == {"error": 0, "drift": 1, "warning": 0, "ok": 12}
+    assert payload["summary"] == {"error": 0, "drift": 1, "warning": 0, "ok": 11}

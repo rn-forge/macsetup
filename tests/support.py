@@ -83,7 +83,7 @@ class Sandbox:
         self.git(self.seed, "push", "origin", "main")
 
     def install_layout(self) -> None:
-        """Lay out an installed macsetup and shkit, as `install.sh` would."""
+        """Lay out an installed macsetup: a version, `current` and its links."""
         product = self.rnf_home / "macsetup"
         (product / "v1").mkdir(parents=True, exist_ok=True)
         (product / "v1" / "rnfmac.sh").write_text("")
@@ -94,9 +94,6 @@ class Sandbox:
         (self.rnf_home / "completions" / "_rnfmac").symlink_to(
             product / "current" / "rnfmac.sh"
         )
-        (self.rnf_home / "shkit" / "v1").mkdir(parents=True, exist_ok=True)
-        (self.rnf_home / "shkit" / "v1" / "shkit.sh").write_text("")
-        (self.rnf_home / "shkit" / "current").symlink_to("v1")
 
     def install_toolchain(self) -> None:
         """Create the oh-my-zsh plugins, nvm and sdkman directories."""

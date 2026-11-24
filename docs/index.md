@@ -2,9 +2,7 @@
 
 macsetup is a macOS system-configuration toolkit driven by one CLI, `rnfmac`:
 one-time machine bootstrap, idempotent day-to-day synchronization, and a
-Homebrew Remote Relay for networks that block package downloads. It is being
-ported from shell to a Python tool ([the plan](specs/python-tool-port.md)); the
-shell `rnfmac` is still what ships.
+Homebrew Remote Relay for networks that block package downloads.
 
 - [Architecture](architecture/index.md) — how the repo is put together.
 - [Guides](guides/index.md) — how to use `rnfmac` and how to work in the repo.

@@ -28,84 +28,22 @@ one anyway, `task lint` will tell you which file drifted and from what.
 
 Run `task docs:generate` — `task lint` fails on a stale nav.
 
-## The shell product
+## The package
 
-macsetup is mid-port from shell to a kiln `python-tool`
-([the plan](../specs/python-tool-port.md)). Until the cutover the shell `rnfmac`
-in `shell/` is what ships, and it is built and tested with mise, not `task`. The
-Python package in `src/rn_forge/macsetup/` is the scaffold it is being ported
-into: its `ToolProduct`, and the zsh theme, keybindings and Homebrew Remote
-Relay patches it will install, packaged under `assets/` and read through
-`rn_forge.macsetup.assets`. Those assets are copies of the files under
-`shell/profiles/shared/` and `shell/homebrew/`; a test fails if the two differ.
+macsetup is a kiln `python-tool`: the package in `src/rn_forge/macsetup/` holds
+the `ToolProduct`, the CLI declaration and the zsh theme, keybindings and
+Homebrew Remote Relay patches, packaged under `assets/` and read through
+`rn_forge.macsetup.assets`.
 
-The ported read-only commands follow one pattern: a Typer function in
-`commands/` over a service in `services/` that takes a `Layout` (paths resolved
-from `$HOME`/`$RNF_HOME`) and a `Runner`, the one seam for `git`, `brew`,
-`hostname` and `uv` (`domain/runner.py`; the real one is `adapters/process.py`).
-Tests replace the runner with `FakeRunner` from `tests/support.py`, which
-scripts everything but `git`, and an autouse fixture in `tests/conftest.py`
-points `HOME` and `RNF_HOME` into `tmp_path`. Run them with
+Commands follow one pattern: a Typer function in `commands/` over a service in
+`services/` that takes a `Layout` (paths resolved from `$HOME`/`$RNF_HOME`) and
+a `Runner`, the one seam for `git`, `brew`, `hostname` and `uv`
+(`domain/runner.py`; the real one is `adapters/process.py`). Tests replace the
+runner with `FakeRunner` from `tests/support.py`, which scripts everything but
+`git`, and an autouse fixture in `tests/conftest.py` points `HOME` and
+`RNF_HOME` into `tmp_path`. Run them with
 `RNF_HOME=/nonexistent-guard task validate`.
 
-Run `RNF_HOME=/nonexistent-guard mise run verify` for the shell product. The
-spec helper pins `RNF_HOME` and `HOME` to a sandbox, but a stray `RNF_HOME`
-exported in your shell must never reach an installer.
-
-### Checkout
-
-The shell product is shell, Ruby, and AWK. Its development tools are pinned with
-[mise](https://mise.jdx.dev/) in `.mise.toml`; ShellSpec is installed separately
-because mise has no plugin for it.
-
-```sh
-mise install
-mise run verify
-```
-
-### Tasks
-
-| Command | Purpose |
-| -- | -- |
-| `mise run format` | Format shell scripts in place with shfmt. |
-| `mise run format-check` | Check shell formatting without changing files. |
-| `mise run lint` | Run shellcheck over shell scripts. |
-| `mise run test` | Run the ShellSpec suite under zsh. |
-| `mise run test-coverage` | Run ShellSpec under kcov and produce `coverage/sonarqube.xml` (Linux only). |
-| `mise run docs` | Generate shell API reference under `docs/reference/shell/` (gitignored). |
-| `mise run build` | Stage `dist/macsetup` and build the release archive. |
-| `mise run verify` | Run the shell product's gate: format-check, lint, test, build, docs. |
-| `mise run clean` | Remove generated distribution artifacts. |
-| `mise run bump <patch\|minor\|major>` | Update `VERSION`; review and commit it yourself. |
-
-`mise run verify` is the shell product's gate. The documentation site is built
-by `task docs:build`; run `mise run docs` first to include the shell reference
-in it.
-
-### Tests and coverage
-
-`tests/` contains ShellSpec examples for install, upgrade, cleanup,
-orchestration, diagnostics, profiles, configuration, Brewfile management, and
-the relay. Tests run against a sandboxed `HOME` with stubbed external commands;
-see `tests/spec_helper.sh`.
-
-`shell/commands/system/init.sh` and `shell/commands/system/sync.sh` are verified
-manually by convention because they drive real Homebrew, oh-my-zsh, uv, nvm, and
-SDKMAN installers without a mockable seam.
-
-There is no local macOS coverage gate. kcov line tracing reports no useful shell
-coverage on macOS, so the Sonar job runs `mise run test-coverage` on Ubuntu
-22.04 and sends `coverage/sonarqube.xml` to SonarCloud.
-
-### Code and documentation conventions
-
-- Use two-space indentation and LF line endings.
-- Write scripts for zsh with `#!/bin/zsh` and `# shellcheck shell=bash`, but
-  keep them bash-parseable; the zsh completion is the exception.
-- Add `shdoc` annotations to every function.
-- Keep `${__SOURCED__:+return}` before `execute` in every dispatchable script.
-- Run `mise run docs` after changing annotations; generated reference files are
-  not committed or hand-edited.
-
-For architecture and non-obvious implementation constraints, read `CLAUDE.md`
-before changing code.
+`system init` and `system sync` have no tests by convention: they drive real
+Homebrew, oh-my-zsh, uv, nvm and SDKMAN installers without a mockable seam, and
+Sonar excludes them from coverage.

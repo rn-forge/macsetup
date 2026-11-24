@@ -110,16 +110,6 @@ def _check_layout(report: Report, layout: Layout) -> None:
             "completions-symlink",
             f"completions/_rnfmac missing or broken — {_PROFILE_SYNC}",
         )
-    if (layout.rnf_home / "shkit" / "current" / "shkit.sh").is_file():
-        report.add(Status.OK, RUNTIME, "shkit", "shkit installed and sourceable")
-    else:
-        shkit = layout.rnf_home / "shkit" / "current"
-        report.add(
-            Status.ERROR,
-            RUNTIME,
-            "shkit",
-            f"shkit not found at {shkit} — reinstall macsetup",
-        )
 
 
 def _check_relay(report: Report, runner: Runner) -> None:

@@ -1,6 +1,6 @@
 [project]
 name = "rn-forge-macsetup"
-version = "0.1.0"
+version = "3.0.0"
 description = "macOS system configuration toolkit: bootstrap, sync, and the Homebrew Remote Relay, driven by one CLI, rnfmac."
 authors = [
     { name = "Rohit Narayanan", email = "rohit.nn@gmail.com" },

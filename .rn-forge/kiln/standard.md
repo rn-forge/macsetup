@@ -13,7 +13,7 @@ is a kiln ADR; this file states the rule.
   assembled by hand, and the lifecycle verbs declared in `[lifecycle]`.
 - **Docs profile:** `mkdocs` — the full area model, a derived nav, and a strict
   site build inside `task validate`.
-- **CI:** GitHub Actions, Sonar on.
+- **CI:** GitHub Actions, Sonar on, release by tag-exists check.
 
 ## 1. One entrypoint
 

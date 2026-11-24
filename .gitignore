@@ -37,8 +37,6 @@ coverage.xml
 .docs-site/
 # END rn-forge kiln
 
-# generated shell API reference (mise run docs)
-docs/reference/shell/
 .sonar-cleanup/
 
 # BEGIN rn-forge agentkit

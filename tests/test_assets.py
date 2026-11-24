@@ -1,10 +1,6 @@
-from pathlib import Path
-
 import pytest
 
 from rn_forge.macsetup.assets import asset, asset_names, read_asset
-
-SHELL = Path(__file__).resolve().parent.parent / "shell"
 
 SHARED_PROFILE = ["DefaultKeyBinding.dict", "rohitnarayanan.zsh-theme"]
 RELAY_PATCHES = [
@@ -40,16 +36,3 @@ def test_each_asset_is_readable_and_not_empty(parts):
 def test_a_missing_asset_raises():
     with pytest.raises(FileNotFoundError):
         read_asset("profiles", "shared", "nope")
-
-
-@pytest.mark.skipif(not SHELL.is_dir(), reason="the shell product has been retired")
-@pytest.mark.parametrize(
-    "parts",
-    [
-        *[("profiles", "shared", name) for name in SHARED_PROFILE],
-        *[("homebrew", "patches", name) for name in RELAY_PATCHES],
-        ("homebrew", "download_strategy", STRATEGY),
-    ],
-)
-def test_each_asset_matches_the_shell_payload_until_it_is_retired(parts):
-    assert read_asset(*parts) == SHELL.joinpath(*parts).read_bytes()
