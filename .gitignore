@@ -1,10 +1,42 @@
-# system files
+## uv ##
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# BEGIN rn-forge kiln
+# kiln's own state
+.rn-forge/kiln/backups/
+.rn-forge/kiln/rendered/
+.rn-forge/kiln/state.lock
+
+# macOS
 .DS_Store
 
-# generated folders
-dist/
-docs/reference/
+# Scratch root (tests and tools write here; task clean removes it)
+.tmp/
+
+# Python tool caches
+.pytest_cache/
+.ruff_cache/
+.import_linter_cache/
+.uv-cache/
+
+# Coverage output
+.coverage
+.coverage.*
+coverage.xml
+
+# Docs build output ([docs] site_dir)
 .docs-site/
+# END rn-forge kiln
+
 .sonar-cleanup/
 
 # BEGIN rn-forge agentkit

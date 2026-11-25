@@ -1,0 +1,13 @@
+name: Install zsh
+description: Install zsh, which tests/test_bootstrap.py sources bootstrap.sh with.
+
+runs:
+  using: composite
+  steps:
+    - name: Install zsh
+      shell: bash
+      run: |
+        if ! command -v zsh >/dev/null; then
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq zsh
+        fi
