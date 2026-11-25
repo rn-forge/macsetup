@@ -6,7 +6,7 @@ from rich.markup import escape
 from rn_forge.cli import JsonOption
 from rn_forge.commons.runtime.console import OutputMode, console
 
-from rn_forge.macsetup.domain.report import CATEGORY_ORDER, Report, Status
+from rn_forge.macsetup.domain.report import CATEGORY_ORDER, Record, Report, Status
 
 __all__ = ["JsonOption", "finish", "render", "say", "use_json"]
 
@@ -26,6 +26,42 @@ def say(text: str) -> None:
     console.rich.print(text, markup=False, highlight=False, soft_wrap=True)
 
 
+def _render_json(report: Report, counts: dict[Status, int]) -> None:
+    console.json(
+        {
+            "findings": [
+                {
+                    "code": finding.code,
+                    "severity": finding.severity.value,
+                    "message": finding.message,
+                    "details": finding.details,
+                }
+                for finding in report.findings()
+            ],
+            "summary": {status.value: n for status, n in counts.items()},
+        }
+    )
+
+
+def _emit(status: Status, message: str) -> None:
+    text = escape(message)
+    if status is Status.ERROR:
+        console.error("{}", text)
+    elif status is Status.OK:
+        console.success("{}", text)
+    else:
+        console.warning("{}", text)
+
+
+def _print_records(records: list[Record], show_ok: bool) -> None:
+    for status in _ORDER:
+        if status is Status.OK and not show_ok:
+            continue
+        for record in records:
+            if record.status is status:
+                _emit(status, record.message)
+
+
 def render(report: Report, *, show_ok: bool) -> None:
     """Print *report*: JSON in JSON mode, else category-grouped lines and a summary.
 
@@ -33,39 +69,14 @@ def render(report: Report, *, show_ok: bool) -> None:
     """
     counts = {status: report.count(status) for status in _ORDER}
     if console.mode is OutputMode.JSON:
-        console.json(
-            {
-                "findings": [
-                    {
-                        "code": finding.code,
-                        "severity": finding.severity.value,
-                        "message": finding.message,
-                        "details": finding.details,
-                    }
-                    for finding in report.findings()
-                ],
-                "summary": {status.value: n for status, n in counts.items()},
-            }
-        )
+        _render_json(report, counts)
         return
     for category in CATEGORY_ORDER:
         records = [r for r in report.records if r.category == category]
         if not records:
             continue
         say(category)
-        for status in _ORDER:
-            if status is Status.OK and not show_ok:
-                continue
-            for record in records:
-                if record.status is not status:
-                    continue
-                text = escape(record.message)
-                if status is Status.ERROR:
-                    console.error("{}", text)
-                elif status is Status.OK:
-                    console.success("{}", text)
-                else:
-                    console.warning("{}", text)
+        _print_records(records, show_ok)
     say(
         f"{counts[Status.OK]} ok, {counts[Status.WARNING]} warning, "
         f"{counts[Status.DRIFT]} drift, {counts[Status.ERROR]} error"

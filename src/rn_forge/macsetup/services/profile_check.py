@@ -12,6 +12,7 @@ from rn_forge.macsetup.domain.report import Report, Status
 __all__ = ["profile_check", "render_profile"]
 
 PROFILE = "profile"
+_PROFILE_FILE = "profile.zsh"
 _SYNC = "run 'rnfmac profile sync'"
 
 
@@ -27,11 +28,11 @@ def render_profile(layout: Layout, host: str) -> bytes:
     return b"".join(
         (
             "#################### macsetup profile — rendered by profile/sync.sh, DO NOT EDIT\n".encode(),
-            _read(config / "shared" / "profile.zsh"),
+            _read(config / "shared" / _PROFILE_FILE),
             b"\n#################### aliases\n",
             _read(config / "shared" / "aliases.zsh"),
             f"\n#################### host overrides: {host}\n".encode(),
-            _read(config / "hosts" / host / "profile.zsh"),
+            _read(config / "hosts" / host / _PROFILE_FILE),
         )
     )
 
@@ -54,7 +55,7 @@ def _patched(layout: Layout, rc: Path) -> bool:
 def profile_check(layout: Layout, host: str) -> Report:
     """Check the host profile exists, the rendered profile is fresh and both rc files are patched."""
     report = Report(PROFILE)
-    host_profile = layout.config_home / "hosts" / host / "profile.zsh"
+    host_profile = layout.config_home / "hosts" / host / _PROFILE_FILE
     if not host_profile.is_file():
         report.add(
             Status.WARNING,

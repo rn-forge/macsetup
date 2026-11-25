@@ -19,8 +19,16 @@ _CLEANUP_TAIL = "Would `brew cleanup`:"
 
 
 def brewfile_path(layout: Layout, host: str) -> Path:
-    """The host's Brewfile in the config checkout."""
-    return layout.config_home / "hosts" / host / "Brewfile"
+    """The host's Brewfile in the config checkout.
+
+    Raises:
+        AppException: The host name would place the Brewfile outside `hosts/`.
+    """
+    hosts = (layout.config_home / "hosts").resolve()
+    path = (hosts / host / "Brewfile").resolve()
+    if not path.is_relative_to(hosts) or path.parent == hosts:
+        raise AppException("invalid host name {!r}", host)
+    return path
 
 
 def _extras(cleanup: Result) -> str:

@@ -9,6 +9,19 @@ __all__ = ["dedupe_brewfile"]
 _HEADERS = {"tap": "## taps", "brew": "## formulae", "cask": "## casks"}
 
 
+def _is_dependency(line: str, requested: Collection[str]) -> bool:
+    if not line.startswith('brew "'):
+        return False
+    return line[len('brew "') :].split('"', 1)[0] not in requested
+
+
+def _group_start(kind: str, last_type: str) -> list[str]:
+    out = [""] if last_type else []
+    if kind in _HEADERS:
+        out.append(_HEADERS[kind])
+    return out
+
+
 def dedupe_brewfile(text: str, requested: Collection[str]) -> str:
     """Regroup *text* under `## taps`/`## formulae`/`## casks` and drop dependency-only formulae.
 
@@ -24,18 +37,13 @@ def dedupe_brewfile(text: str, requested: Collection[str]) -> str:
         if line.startswith("#"):
             pending = line
             continue
-        if line.startswith('brew "'):
-            name = line[len('brew "') :].split('"', 1)[0]
-            if name not in requested:
-                pending = ""
-                continue
+        if _is_dependency(line, requested):
+            pending = ""
+            continue
         words = line.split()
         kind = words[0] if words else ""
         if kind != last_type:
-            if last_type:
-                out.append("")
-            if kind in _HEADERS:
-                out.append(_HEADERS[kind])
+            out.extend(_group_start(kind, last_type))
             last_type = kind
         if pending:
             out.append(pending)

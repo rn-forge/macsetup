@@ -3,10 +3,14 @@
 import json
 import shutil
 
+import pytest
+from rn_forge.commons.exceptions import AppException
 from support import FakeRunner, brew_script
 
 from rn_forge.macsetup.domain.brewfile import dedupe_brewfile
+from rn_forge.macsetup.domain.layout import Layout
 from rn_forge.macsetup.domain.runner import Result
+from rn_forge.macsetup.services.brew_diff import brewfile_path
 
 
 def dump_script(target_text: str = 'brew "git"\nbrew "shellcheck"\nbrew "libdep"\n'):
@@ -164,3 +168,10 @@ def test_dedupe_matches_the_awk_on_blank_lines_and_unknown_kinds():
     dump = 'brew "a"\n\nvscode "x"\n'
     # verified against the awk: a blank line is its own group, so two blank lines come out
     assert dedupe_brewfile(dump, {"a"}) == '## formulae\nbrew "a"\n\n\nvscode "x"\n'
+
+
+@pytest.mark.parametrize("host", ["..", "../..", "../../etc", ""])
+def test_brewfile_path_refuses_a_host_outside_hosts(tmp_path, host):
+    layout = Layout(user_home=tmp_path, rnf_home=tmp_path / ".rn-forge")
+    with pytest.raises(AppException):
+        brewfile_path(layout, host)
