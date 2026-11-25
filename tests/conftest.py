@@ -13,6 +13,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 import pytest
+import typer.rich_utils
 from rn_forge.cli import run as run_cli
 from rn_forge.commons.runtime.console import OutputMode, console
 from support import FakeRunner, Invocation, Sandbox
@@ -43,6 +44,8 @@ def isolated_environment(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Non
         monkeypatch.setenv(f"GIT_{who}_NAME", "pytest")
         monkeypatch.setenv(f"GIT_{who}_EMAIL", "pytest@example.invalid")
     monkeypatch.setattr(wiring, "runner", lambda: FakeRunner())
+    # typer forces ANSI help under GITHUB_ACTIONS/FORCE_COLOR, splitting option names
+    monkeypatch.setattr(typer.rich_utils, "FORCE_TERMINAL", None)
     previous = console.mode
     yield
     console.set_mode(previous if isinstance(previous, OutputMode) else OutputMode.PLAIN)

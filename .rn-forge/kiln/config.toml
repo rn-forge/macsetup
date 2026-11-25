@@ -185,7 +185,7 @@ jobs = []
 # Local composite actions the generated setup action runs as its last steps.
 # Changing the list rewrites the setup action on `kiln apply`.
 # Default: [].
-setup = []
+setup = ["./.github/actions/install-zsh"]
 
 # Local composite actions every Pages-uploading job runs before the upload,
 # with `SITE_DIR` set. Changing the list rewrites the workflows on

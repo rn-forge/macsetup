@@ -30,3 +30,6 @@ runs:
       with:
         version: 3.x
         repo-token: ${{ inputs.github-token }}
+
+    - name: Run ./.github/actions/install-zsh
+      uses: ./.github/actions/install-zsh # zizmor: ignore[self-repository] actionlint rejects the $/ form

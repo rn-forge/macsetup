@@ -10,7 +10,7 @@
     },
     ".github/actions/setup/action.yml": {
       "begin_marker": null,
-      "content_hash": "142b186bbb42bededeb94f84c3c566df0b5c98309eeefbe3a75a65f680451194",
+      "content_hash": "d9c6f287c1392a0bdd29f6eae4707d78f1000e436c6895ecc95d837bc535d6f6",
       "end_marker": null,
       "key_paths": null,
       "kind": "managed",
@@ -18,7 +18,7 @@
     },
     ".github/dependabot.yml": {
       "begin_marker": null,
-      "content_hash": "6a1c42ee9c77d38c05bc55ab1837999ef984581fbf57d968bdcd5cc069fdf5cf",
+      "content_hash": "ac6d0a0b200b2b8e98d14b9250ce7813e37668aefef35ed98478e44439cc05b9",
       "end_marker": null,
       "key_paths": null,
       "kind": "managed",
@@ -434,7 +434,7 @@
     }
   },
   "metadata": {
-    "config_hash": "d90566856d7b3c2dff59529944a0976fd7c6168f302c534ff337feedabe9bf9a",
+    "config_hash": "d5399413769317dbab409c6e1e357422bfb21198d4fbe34c30a81d41232c2cb9",
     "config_provenance": {
       "archetype.python-tool.module": {
         "layer": "flags",
@@ -449,8 +449,10 @@
         "value": []
       },
       "ci.hooks.setup": {
-        "layer": "defaults",
-        "value": []
+        "layer": "repo",
+        "value": [
+          "./.github/actions/install-zsh"
+        ]
       },
       "ci.jobs": {
         "layer": "defaults",
