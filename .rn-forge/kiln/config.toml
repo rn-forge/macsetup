@@ -36,7 +36,7 @@ lifecycle = true
 # A kiln release tag, `v<version>`, or a full 40-character commit SHA.
 # `kiln apply` pins the dev dependency, the `uvx` commands and the CI install
 # to it. A branch name is refused.
-ref = "bf5538edb69290e7fb9e927c5a502d5a7f7fc34b"
+ref = "c0742db49889dfb3b4ba8cfd5207158720e760ff"
 
 # The branch `ref`'s commit was taken from, for `kiln pin` to move on from.
 # Only with a SHA `ref`.

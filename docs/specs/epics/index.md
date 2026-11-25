@@ -6,7 +6,9 @@ ships when is on [the board](../index.md).
 
 <!-- BEGIN derived epics -->
 
-Jump to: [E1–E10](#e1e10)
+Jump to:
+
+- [E1–E10](#e1e10)
 
 ## E1–E10
 

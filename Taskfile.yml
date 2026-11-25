@@ -22,8 +22,8 @@ env:
 # this file alone. go-task passes these to each included file; a namespace file
 # that declared its own would shadow them.
 vars:
-  KILN: 'uvx --from "rn-forge-kiln @ git+https://github.com/rn-forge/kiln@bf5538edb69290e7fb9e927c5a502d5a7f7fc34b" kiln'
-  DEVOPS: 'uvx --from "rn-forge-kiln @ git+https://github.com/rn-forge/kiln@bf5538edb69290e7fb9e927c5a502d5a7f7fc34b" kiln-devops'
+  KILN: 'uvx --from "rn-forge-kiln @ git+https://github.com/rn-forge/kiln@c0742db49889dfb3b4ba8cfd5207158720e760ff" kiln'
+  DEVOPS: 'uvx --from "rn-forge-kiln @ git+https://github.com/rn-forge/kiln@c0742db49889dfb3b4ba8cfd5207158720e760ff" kiln-devops'
 
 includes:
   quality: tasks/quality.yml

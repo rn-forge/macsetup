@@ -106,7 +106,7 @@
     },
     ".rn-forge/kiln/standard.md": {
       "begin_marker": null,
-      "content_hash": "2436a94efe35ac7887c862b87db2aabc631cbce4eca2191b9805cabdd1aa4be1",
+      "content_hash": "5cf7277ff6f394350d3f3e397ba073a3dd577732f0b919baf1e75cf5d16ac0be",
       "end_marker": null,
       "key_paths": null,
       "kind": "managed",
@@ -130,7 +130,7 @@
     },
     "AGENTS.md#rn-forge kiln": {
       "begin_marker": "<!-- BEGIN rn-forge kiln -->",
-      "content_hash": "833954c224cc919f0648543b6de1a67291a80276d744e2d1e52a8e7e1762cff5",
+      "content_hash": "addc75dd4aa7a8122722911d533e5b181ea0ae331a50778e988a728a7d27dd6e",
       "end_marker": "<!-- END rn-forge kiln -->",
       "key_paths": null,
       "kind": "block",
@@ -138,7 +138,7 @@
     },
     "Taskfile.yml": {
       "begin_marker": null,
-      "content_hash": "ec1553dc154d3054de24ee9c6733a9dc3c7615deb090a4aa6e4a89136de373f6",
+      "content_hash": "8dacadc17cb2046d24198f774b72f345b567047a0b31f12df1bc88947f54aca1",
       "end_marker": null,
       "key_paths": null,
       "kind": "managed",
@@ -154,7 +154,7 @@
     },
     "docs/_structure.md": {
       "begin_marker": null,
-      "content_hash": "263b6f301afd3f9780f24b85d86324bf3d34ac0bd1915b57b77dab6eb0448e31",
+      "content_hash": "ca8a1f598463d6d2c4194c7c1526c14d6cb0866334a20ea415270652bd5e1b46",
       "end_marker": null,
       "key_paths": null,
       "kind": "managed",
@@ -378,7 +378,7 @@
     },
     "tasks/ci.yml": {
       "begin_marker": null,
-      "content_hash": "f068e2366c8c005dc21aad0b5c833e0418152989f722d278fbfedb1033ea6d4e",
+      "content_hash": "34945a1cbbf3e8663fc74aac477b7694957d5e3565b2bb7fcc98df7f63ac043f",
       "end_marker": null,
       "key_paths": null,
       "kind": "managed",
@@ -434,7 +434,7 @@
     }
   },
   "metadata": {
-    "config_hash": "d5399413769317dbab409c6e1e357422bfb21198d4fbe34c30a81d41232c2cb9",
+    "config_hash": "6d220a80217226d86f25e05f71c2b426eda7f814aaab709c7eaf1616a5aa9a2c",
     "config_provenance": {
       "archetype.python-tool.module": {
         "layer": "flags",
@@ -527,8 +527,8 @@
         "value": ".docs-site"
       },
       "kiln.ref": {
-        "layer": "flags",
-        "value": "bf5538edb69290e7fb9e927c5a502d5a7f7fc34b"
+        "layer": "repo",
+        "value": "c0742db49889dfb3b4ba8cfd5207158720e760ff"
       },
       "kiln.track": {
         "layer": "flags",
